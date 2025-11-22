@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register - Bruh</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h2>Register</h2>
+    <input type="text" id="name" placeholder="Name" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button onclick="register()">Register</button>
+    <p class="message" id="msg"></p>
+    <p>Already have an account? <a href="index.html">Login</a></p>
+  </div>
+
+  <script>
+    async function register() {
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+//await pauses the execution of the async function it’s in
+      const res = await fetch('/register', { /*making a request to the server,make an HTTP request,
+        wait for the response, and when you come back,
+         give me a Promise containing the response. */
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }, /*headers: { 'Content-Type': 'application/json' } → 
+        important: informs the server how to parse the body. express.json() (or bodyParser.json())
+         will check this header to parse the request.*/
+        body: JSON.stringify({ name, email, password }) //HTTP bodies are bytes/text.
+      });
+
+      const text = await res.text();
+      document.getElementById('msg').innerText = text;
+    }
+  </script>
+</body>
+</html>
