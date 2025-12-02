@@ -26,8 +26,13 @@
         body: JSON.stringify({ email, password })
       });
 
-      const text = await res.text();
-      document.getElementById('msg').innerText = text;
+      const data = await res.json();
+      if (data.success) {
+        window.location.href = "/dashboard.html";
+        return;
+      }
+      document.getElementById('msg').innerText = data.error || "Login failed.";
+
     }
   </script>
 </body>

@@ -5,25 +5,30 @@ const bcrypt = require('bcryptjs');
 const db = require('./db');
 
 const app = express(); //express creates a server object that listens to HTTP requests.
-app.use(bodyParser.json()); //middleare:parses json
+app.use(bodyParser.json()); //middleware:parses json
 //checks Content-Type: application/json and parses JSON string body into a JS object. 
 //It then sets req.body = { name, email, password }. Without it, req.body would be undefined.
 app.use(bodyParser.urlencoded({ extended: true }));//decodes html form submissions and parses the data
 //extended:true allows for rich(nested) objects and arrays to be encoded into the URL-encoded format, allowing for a JSON-like experience with URL-encoded.
 
 const PORT = process.env.PORT || 3000;
-app.use(express.static('public'));
-
+app.use(express.static('public')); //static files in public folder dont change per user
+//**A route = a specific address + action on your server
+// Address → /, /login, /items/5, /messages
+// Method → GET, POST, PUT, DELETE */
 // Test route
-app.get('/', (req, res) => {
+app.get('/', (req, res) => { // / is the root route
   res.send('Server is running!');
 });
 
 // Register route
 app.post('/register', async (req, res) => { //res and req are objects
   try {
-    const { name, email, password } = req.body;//object destructuring
-    const [existing] = await db.execute('SELECT * FROM users WHERE email = ?', [email]); //db.execute returns an array
+    const { name, email, password } = req.body;//object destructuring 
+    //db.execute returns [rows, metadata] we dont care bout metadata
+    //[email] → wraps it in an array because db.execute needs an array of query parameters.
+    const [existing] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);//[email] makes an array with the variable email inside it
+     //db.execute returns an array
     // which then Takes the first element of the array (rows) and assign it to the variable existing.
     if (existing.length > 0) { //existing is an array of rows returned from the database query.
       return res.status(400).send('Email already registered!');
@@ -45,6 +50,9 @@ app.post('/register', async (req, res) => { //res and req are objects
 app.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    /**email = req.body.email
+     password = req.body.password
+ */
     const [rows] = await db.execute('SELECT * FROM users WHERE email = ?', [email]);
     if (rows.length === 0) return res.status(400).send('User not found');
 
@@ -52,7 +60,8 @@ app.post('/login', async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(400).send('Incorrect password');
 
-    res.send('Login successful!');
+    res.json({ success: true });
+
   } catch (err) {
     console.error(err);
     res.status(500).send('Error logging in');
