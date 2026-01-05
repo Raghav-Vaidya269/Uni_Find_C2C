@@ -1,3 +1,5 @@
+const multer = require('multer');  //multer is middleware for handling multipart/form-data, which is primarily used for uploading files by parsing.
+const path = require('path');//path is a module for working with file paths safely.
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = 'super_secret_key_change_this';
 const express = require('express'); //import express framework
@@ -126,6 +128,62 @@ app.post('/login', async (req, res) => {
 app.get('/dashboard', authenticateToken, (req, res) => {
   res.json({ message: `Welcome ${req.user.name}` });
 });
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueName + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage });
+app.use('/uploads', express.static('uploads'));
+app.post(
+  '/items',
+  authenticateToken,
+  upload.single('image'),
+  async (req, res) => {
+    try {
+      const {
+        name,
+        description,
+        category,
+        item_condition,
+        price,
+        quantity
+      } = req.body;
+
+      const imagePath = `/uploads/${req.file.filename}`;
+      const userId = req.user.id;
+
+      await db.execute(
+        `INSERT INTO items 
+        (name, description, category, item_condition, price, quantity, uploaded_by, image_path)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          name,
+          description,
+          category,
+          item_condition,
+          price,
+          quantity,
+          userId,
+          imagePath
+        ]
+      );
+
+      res.json({ success: true });
+
+    } catch (err) {
+      console.error(err);
+      res.status(500).send('Item upload failed');
+    }
+  }
+);
+
 
 // Start server
 app.listen(PORT, () => {
