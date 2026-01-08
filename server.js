@@ -1,133 +1,292 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = 'super_secret_key_change_this';
-const express = require('express'); //import express framework
+require('dotenv').config();
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key_change_this';
+const express = require('express');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
-const db = require('./db'); //A module is just a file that returns a value.
+const db = require('./db');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const cors = require('cors');
 
-const app = express(); //express creates a server object that listens to HTTP requests. 
-//.use means to Register this function so I can run it on every request
-app.use(bodyParser.json()); //middleware:parses json
-//checks Content-Type: application/json and parses JSON string body into a JS object. 
-//It then sets req.body = { name, email, password }. Without it, req.body would be undefined.
-app.use(bodyParser.urlencoded({ extended: true }));//decodes html form submissions and parses the data
-//extended:true allows for rich(nested) objects and arrays to be encoded into the URL-encoded format, allowing for a JSON-like experience with URL-encoded.
+const app = express();
+
+// Middleware
+app.use(cors()); // Allow all CORS for dev
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+// Ensure uploads directory exists
+const uploadDir = path.join(__dirname, 'public/uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure Multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'public/uploads/')
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + file.originalname)
+  }
+})
+const upload = multer({ storage: storage });
+
+// Serve Static Files
+// Note: In production, frontend might be served differently or built into 'dist'
+app.use(express.static('public'));
+app.use('/uploads', express.static('public/uploads'));
 
 const PORT = process.env.PORT || 3000;
 
-app.use(express.static('public')); //static files in public folder dont change per user
-//**A route = a specific address + action on your server
-// Address → /, /login, /items/5, /messages
-// Method → GET, POST, PUT, DELETE */
-// Test route
-app.get('/', (req, res) => { // / is the root route function runs only when browser hits the /
-  res.send('Server is running!');
+app.get('/', (req, res) => {
+  res.send('Uni-Find API is running!');
 });
 
+// Auth Middleware
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
-  /**req.headers is a plain js object 
-   * req.headers = {
-  host: "localhost:3000",
-  authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  content-type: "application/json"
-};
- */
-  const token = authHeader && authHeader.split(' ')[1]; //&& means if authHeader is null, token is null, else split the string at the space and take the second part
-
+  const token = authHeader && authHeader.split(' ')[1];
   if (!token) return res.sendStatus(401);
-  // for verifying, Split token into 3 parts
 
-  // Recalculate signature using the same secret
-
-  // Compare signatures
-
-  // Match → token is legit → give payload back
-
-  // Mismatch → token was tampered → error
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.sendStatus(403);
-
     req.user = user;
     next();
   });
 }
 
-// Register route
-app.post('/register', async (req, res) => { //res and req are objects
-  try {
-    const { name, email, password } = req.body;//object destructuring 
-    //db.execute returns [rows, metadata] we dont care bout metadata
-    //[email] → wraps it in an array because db.execute needs an array of query parameters.
-    const [existing] = await db.execute('SELECT id, email FROM users WHERE email = ?', [email]);//db.execute returns a Promise. the promise resolves to an array containing the rows and fields
-    //in db.execute, result[0] = rows, result[1] = fields
-    //rows is an array of objects representing each row returned from the database query
+// --- API Routes (Standardized with /api prefix) ---
 
-    //[email] makes an array with the variable email inside it
-    //db.execute returns an array
-    // which then Takes the first element of the array (rows) and assign it to the variable existing.
-    if (existing.length > 0) { //existing is an array of rows returned from the database query.
-      return res.status(400).send('Email already registered!');
+// 1. Auth - Simple REST API (KUmail only)
+
+app.post('/api/auth/kumail', async (req, res) => {
+  try {
+    const { email, name, type, password } = req.body; // type: 'login' or 'register'
+
+    // Validate KUmail domain - accept both @ku.edu.np and @student.ku.edu.np
+    const isValidKUmail = email.endsWith('@ku.edu.np') || email.endsWith('@student.ku.edu.np');
+
+    if (!isValidKUmail) {
+      return res.status(403).json({
+        error: 'Access restricted to verified Kathmandu University students only.'
+      });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);//await pauses the function until the password is hashed.
-    await db.execute(   //.execute returns a Promise that resolves to an array containing the results and fields
-      'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-      [name, email, hashedPassword]
-    );
-    res.send('User registered!'); //sends a response back to the client
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error registering user');
-  }
-});
+    if (!password || password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
+    }
 
-// Login route
-app.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    /**email = req.body.email
-     password = req.body.password
- */
-    const [rows] = await db.execute(
-      'SELECT id, email, password, name FROM users WHERE email = ? LIMIT 1',
+    // Check if user exists
+    const [existingUsers] = await db.execute(
+      'SELECT id, email, name, picture, password FROM users WHERE email = ?',
       [email]
     );
 
-    if (rows.length === 0) return res.status(400).send('User not found');
+    let user;
 
-    const user = rows[0];
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(400).send('Incorrect password');
+    if (type === 'login') {
+      if (existingUsers.length === 0) {
+        return res.status(404).json({ error: 'Account not found. Please register first.' });
+      }
+      user = existingUsers[0];
 
-    const token = jwt.sign( //.sign creates a JWT token and returns it as a string
-      { id: user.id, email: user.email, name: user.name }, // key:value pairs in the payload
-      JWT_SECRET, //{ id, email, name } is the payload
-      //signature = HMAC(payload + header, JWT_SECRET)
-      //final token is header.payload.signature i.e some encoded strings separated by dots
+      const validPassword = await bcrypt.compare(password, user.password || '');
+      if (!validPassword) {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
 
+    } else if (type === 'register') {
+      if (existingUsers.length > 0) {
+        return res.status(409).json({ error: 'User already exists. Please login.' });
+      }
+      // Create new user
+      const userName = name || email.split('@')[0];
+      const defaultPicture = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=2563eb&color=fff`;
 
-      { expiresIn: '1h' }
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const [result] = await db.execute(
+        'INSERT INTO users (name, email, picture, password) VALUES (?, ?, ?, ?)',
+        [userName, email, defaultPicture, hashedPassword]
+      );
+      user = { id: result.insertId, name: userName, email, picture: defaultPicture };
+    } else {
+      return res.status(400).json({ error: 'Invalid auth type' });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user.id, email: user.email, name: user.name, picture: user.picture },
+      JWT_SECRET,
+      { expiresIn: '24h' }
     );
-    /**jwt.sign(payload, secret) creates a JWT token (a string) that you can safely give to the client.
 
-    Payload = data you want the token to carry (here: user ID and email).
-
-    Secret = JWT_SECRET → the key that “locks” the token. */
-
-    res.json({ token });//{ token } → creates an object with property token and value from the variable token.
-
+    // Return user without password
+    res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email, picture: user.picture }
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).send('Error logging in');
+    console.error('Auth error:', err);
+    res.status(500).json({ error: 'Authentication failed' });
   }
 });
 
-app.get('/dashboard', authenticateToken, (req, res) => {
-  res.json({ message: `Welcome ${req.user.name}` });
+app.get('/api/dashboard', authenticateToken, (req, res) => {
+  // Return user info
+  res.json({ message: `Welcome ${req.user.name}`, user: req.user });
 });
 
-// Start server
+// Update Profile
+app.put('/api/profile', authenticateToken, upload.single('avatar'), async (req, res) => {
+  try {
+    const { name } = req.body;
+    const userId = req.user.id;
+    let picture = req.user.picture;
+
+    // If new avatar uploaded, update picture URL
+    if (req.file) {
+      picture = `/uploads/${req.file.filename}`;
+    }
+
+    await db.execute('UPDATE users SET name = ?, picture = ? WHERE id = ?', [name, picture, userId]);
+
+    // Refresh user data
+    const [rows] = await db.execute('SELECT id, name, email, picture FROM users WHERE id = ?', [userId]);
+    res.json({ message: 'Profile updated', user: rows[0] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error updating profile');
+  }
+});
+
+// Get User Items (My Listings)
+app.get('/api/my-items', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [items] = await db.execute(
+      'SELECT * FROM items WHERE user_id = ? ORDER BY created_at DESC',
+      [userId]
+    );
+    res.json(items);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error fetching user items');
+  }
+});
+
+// 2. Marketplace Items
+
+// Create Item
+app.post('/api/items', authenticateToken, upload.array('images', 5), async (req, res) => {
+  try {
+    const { title, description, price, category } = req.body;
+    const userId = req.user.id;
+    const imageUrl = req.files.length > 0 ? `/uploads/${req.files[0].filename}` : null;
+
+    const [result] = await db.execute(
+      'INSERT INTO items (user_id, title, description, price, category, image_url) VALUES (?, ?, ?, ?, ?, ?)',
+      [userId, title, description, price, category, imageUrl]
+    );
+
+    res.status(201).json({ id: result.insertId, message: 'Item listed successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error creating item listing');
+  }
+});
+
+// Get All Items
+app.get('/api/items', async (req, res) => {
+  try {
+    const { category, search, maxPrice } = req.query;
+    let query = 'SELECT items.*, users.name as seller_name FROM items JOIN users ON items.user_id = users.id WHERE status = "Available"';
+    const params = [];
+
+    if (category && category !== 'All') {
+      query += ' AND category = ?';
+      params.push(category);
+    }
+    if (search) {
+      query += ' AND (title LIKE ? OR description LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+    if (maxPrice) {
+      query += ' AND price <= ?';
+      params.push(maxPrice);
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    const [items] = await db.execute(query, params);
+    res.json(items);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error fetching items');
+  }
+});
+
+// Get Item Details
+app.get('/api/items/:id', async (req, res) => {
+  try {
+    const [rows] = await db.execute(
+      `SELECT items.*, users.name as seller_name, users.email as seller_email 
+         FROM items JOIN users ON items.user_id = users.id 
+         WHERE items.id = ?`,
+      [req.params.id]
+    );
+    if (rows.length === 0) return res.status(404).send('Item not found');
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error fetching item details');
+  }
+});
+
+// 3. Lost & Found
+
+app.post('/api/lost-found', authenticateToken, upload.single('image'), async (req, res) => {
+  try {
+    const { type, title, description, location, date_lost_found, contact_info } = req.body;
+    const userId = req.user.id;
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+
+    const [result] = await db.execute(
+      `INSERT INTO lost_found (user_id, type, title, description, location, date_lost_found, image_url, contact_info) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, type, title, description, location, date_lost_found, imageUrl, contact_info]
+    );
+    res.status(201).json({ id: result.insertId, message: 'Post created successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error creating lost/found post');
+  }
+});
+
+app.get('/api/lost-found', async (req, res) => {
+  try {
+    const { type } = req.query;
+    let query = 'SELECT lost_found.*, users.name as user_name FROM lost_found JOIN users ON lost_found.user_id = users.id WHERE status = "Open"';
+    const params = [];
+
+    if (type) {
+      query += ' AND type = ?';
+      params.push(type);
+    }
+
+    query += ' ORDER BY created_at DESC';
+    const [posts] = await db.execute(query, params);
+    res.json(posts);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error fetching lost/found posts');
+  }
+});
+
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
