@@ -1,0 +1,69 @@
+import React, { useState } from 'react';
+import { GraduationCap, User } from 'lucide-react';
+import { styles } from './styles';
+import { MarketplaceButton, PostButton } from './buttons';
+import { AccountDropdown } from './AccountDropdown';
+import PostItemModal from './PostItem/PostItemModal';
+import { CreateAccountModal } from './CreateAccountModal';
+
+export function Header() {
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [theme, setTheme] = useState(true);
+  const [postItemOpen, setPostItemOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  return (
+    <>
+      <header style={styles.header}>
+        <div style={styles.headerContent}>
+          <div style={styles.headerFlex}>
+            {/* Logo */}
+            <div style={styles.logo}>
+              <GraduationCap size={32} strokeWidth={2.5} />
+              <span style={styles.logoText}>UNI-find</span>
+            </div>
+
+            {/* Navigation */}
+            <div style={styles.navButtons}>
+              <MarketplaceButton onClick={() => {}} />
+              <PostButton onClick={() => setPostItemOpen(true)} />
+
+              {/* Account Dropdown */}
+              <div style={{position: 'relative'}}>
+                <button 
+                  onClick={() => setAccountOpen(!accountOpen)}
+                  style={styles.accountBtn}
+                >
+                  <User size={24} color="white" />
+                </button>
+
+                <AccountDropdown 
+                  isOpen={accountOpen}
+                  onClose={() => setAccountOpen(false)}
+                  theme={theme}
+                  onThemeToggle={() => setTheme(!theme)}
+                  onLogout={() => {
+                    setAccountOpen(false);
+                    setAuthModalOpen(true);
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Post Item Modal */}
+      <PostItemModal 
+        isOpen={postItemOpen} 
+        onClose={() => setPostItemOpen(false)}
+      />
+
+      {/* Create Account Modal */}
+      <CreateAccountModal 
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
+    </>
+  );
+}
