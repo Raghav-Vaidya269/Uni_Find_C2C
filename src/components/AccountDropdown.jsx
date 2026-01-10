@@ -43,7 +43,9 @@ export function AccountDropdown({ isOpen, onClose, theme, onThemeToggle, onLogou
       </div>
 
       <button 
-        onClick={onLogout}
+        onClick={() => {
+          onLogout();
+        }}
         style={styles.menuItem}
       >
         Log out/Login

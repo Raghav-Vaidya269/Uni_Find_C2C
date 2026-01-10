@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingBag, Search, GraduationCap, User, ChevronDown } from 'lucide-react';
-import PostItemModal from '../components/PostItem/PostItemModal';
+import { Search, ShoppingBag } from 'lucide-react';
+import { Header } from '../components/Header';
 
 const styles = {
   pageContainer: {
@@ -369,10 +369,7 @@ const marketplaceItems = [
 
 export default function MarketplacePage() {
   const navigate = useNavigate();
-  const [accountOpen, setAccountOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
-  const [theme, setTheme] = useState(true);
-  const [postItemOpen, setPostItemOpen] = useState(false);
 
   const handleItemClick = (itemId) => {
     navigate(`/product/${itemId}`);
@@ -381,82 +378,7 @@ export default function MarketplacePage() {
   return (
     <div style={styles.pageContainer}>
       {/* Header */}
-      <header style={styles.header}>
-        <div style={styles.headerContent}>
-          <div style={styles.headerFlex}>
-            {/* Logo */}
-            <div style={styles.logo}>
-              <GraduationCap size={32} strokeWidth={2.5} />
-              <span style={styles.logoText}>UNI-find</span>
-            </div>
-
-            {/* Navigation */}
-            <div style={styles.navButtons}>
-              <button style={styles.marketplaceBtn}>
-                <ShoppingBag size={20} />
-                <span>Marketplace</span>
-              </button>
-              
-              <button style={styles.postBtn} onClick={() => setPostItemOpen(true)}>
-                Post Item
-              </button>
-
-              {/* Account Dropdown */}
-              <div style={{position: 'relative'}}>
-                <button 
-                  onClick={() => setAccountOpen(!accountOpen)}
-                  style={styles.accountBtn}
-                >
-                  <User size={24} color="white" />
-                </button>
-
-                {accountOpen && (
-                  <div style={styles.dropdown}>
-                    <button 
-                      onClick={() => setAccountOpen(false)}
-                      style={styles.dropdownHeader}
-                    >
-                      <span style={{fontWeight: '500', color: '#374151'}}>Account</span>
-                      <ChevronDown size={20} color="#9ca3af" />
-                    </button>
-                    
-                    <div style={styles.userInfo}>
-                      <div style={styles.userFlex}>
-                        <div style={styles.avatar}>
-                          OR
-                        </div>
-                        <div>
-                          <div style={styles.userName}>Olivia Rhye</div>
-                          <div style={styles.userEmail}>olivia@untitledui.com</div>
-                        </div>
-                        <div style={styles.statusDot}></div>
-                      </div>
-                    </div>
-
-                    <button style={styles.menuItem}>
-                      Settings
-                    </button>
-
-                    <div style={styles.themeRow}>
-                      <span style={{color: '#374151'}}>Theme</span>
-                      <button
-                        onClick={() => setTheme(!theme)}
-                        style={styles.toggleBtn(theme)}
-                      >
-                        <div style={styles.toggleCircle(theme)}></div>
-                      </button>
-                    </div>
-
-                    <button style={styles.menuItem}>
-                      Log out/Login
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <div style={styles.hero}>
@@ -548,12 +470,6 @@ export default function MarketplacePage() {
           <button style={styles.contactBtn}>Contact</button>
         </div>
       </footer>
-
-      {/* Post Item Modal */}
-      <PostItemModal 
-        isOpen={postItemOpen} 
-        onClose={() => setPostItemOpen(false)}
-      />
     </div>
   );
 }

@@ -4,11 +4,13 @@ import { styles } from './styles';
 import { MarketplaceButton, PostButton } from './buttons';
 import { AccountDropdown } from './AccountDropdown';
 import PostItemModal from './PostItem/PostItemModal';
+import { CreateAccountModal } from './CreateAccountModal';
 
 export function Header() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [theme, setTheme] = useState(true);
   const [postItemOpen, setPostItemOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   return (
     <>
@@ -40,7 +42,10 @@ export function Header() {
                   onClose={() => setAccountOpen(false)}
                   theme={theme}
                   onThemeToggle={() => setTheme(!theme)}
-                  onLogout={() => setAccountOpen(false)}
+                  onLogout={() => {
+                    setAccountOpen(false);
+                    setAuthModalOpen(true);
+                  }}
                 />
               </div>
             </div>
@@ -52,6 +57,12 @@ export function Header() {
       <PostItemModal 
         isOpen={postItemOpen} 
         onClose={() => setPostItemOpen(false)}
+      />
+
+      {/* Create Account Modal */}
+      <CreateAccountModal 
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
       />
     </>
   );

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { X, Calendar, Phone, Heart, ChevronLeft } from 'lucide-react';
+import { Calendar, Phone, Heart } from 'lucide-react';
+import { Header } from '../components/Header';
 import { styles } from '../components/ProductDetail/productDetailStyles';
 
 export default function ProductDetailPage() {
@@ -91,27 +92,7 @@ export default function ProductDetailPage() {
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
       {/* Header */}
-      <div style={{ backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '1rem' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', paddingX: '1rem' }}>
-          <button
-            onClick={() => navigate('/')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              backgroundColor: 'transparent',
-              border: 'none',
-              color: '#4f46e5',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-            }}
-          >
-            <ChevronLeft size={20} />
-            Back to Marketplace
-          </button>
-        </div>
-      </div>
+      <Header />
 
       {/* Main Content */}
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '3rem 1rem' }}>
