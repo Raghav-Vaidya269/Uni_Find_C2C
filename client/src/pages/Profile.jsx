@@ -87,6 +87,7 @@ export default function Profile() {
             }
 
             setIsEditing(false);
+            alert('Profile updated successfully!');
         } catch (error) {
             console.error('Failed to update profile:', error);
             alert('Failed to update profile');

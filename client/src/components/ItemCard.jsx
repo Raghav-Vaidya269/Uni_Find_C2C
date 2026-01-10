@@ -1,4 +1,23 @@
 export default function ItemCard({ item }) {
+    const getTimeAgo = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+
+        let interval = seconds / 31536000;
+        if (interval > 1) return Math.floor(interval) + "y ago";
+        interval = seconds / 2592000;
+        if (interval > 1) return Math.floor(interval) + "mo ago";
+        interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + "d ago";
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + "h ago";
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + "m ago";
+        return Math.floor(seconds) + "s ago";
+    };
+
     return (
         <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden border border-gray-100">
             <div className="bg-gray-200 h-48 w-full relative">
@@ -24,7 +43,7 @@ export default function ItemCard({ item }) {
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {item.category}
                     </span>
-                    <span className="text-xs text-gray-400">2d ago</span>
+                    <span className="text-xs text-gray-400">{getTimeAgo(item.created_at)}</span>
                 </div>
             </div>
         </div>

@@ -81,7 +81,7 @@ app.post('/api/auth/kumail', async (req, res) => {
 
     // Check if user exists
     const [existingUsers] = await db.execute(
-      'SELECT id, email, name, picture, password FROM users WHERE email = ?',
+      'SELECT id, email, name, password FROM users WHERE email = ?',
       [email]
     );
 
@@ -104,22 +104,21 @@ app.post('/api/auth/kumail', async (req, res) => {
       }
       // Create new user
       const userName = name || email.split('@')[0];
-      const defaultPicture = `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=2563eb&color=fff`;
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const [result] = await db.execute(
-        'INSERT INTO users (name, email, picture, password) VALUES (?, ?, ?, ?)',
-        [userName, email, defaultPicture, hashedPassword]
+        'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
+        [userName, email, hashedPassword]
       );
-      user = { id: result.insertId, name: userName, email, picture: defaultPicture };
+      user = { id: result.insertId, name: userName, email };
     } else {
       return res.status(400).json({ error: 'Invalid auth type' });
     }
 
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, email: user.email, name: user.name, picture: user.picture },
+      { id: user.id, email: user.email, name: user.name },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -127,7 +126,7 @@ app.post('/api/auth/kumail', async (req, res) => {
     // Return user without password
     res.json({
       token,
-      user: { id: user.id, name: user.name, email: user.email, picture: user.picture }
+      user: { id: user.id, name: user.name, email: user.email }
     });
   } catch (err) {
     console.error('Auth error:', err);
@@ -143,22 +142,37 @@ app.get('/api/dashboard', authenticateToken, (req, res) => {
 // Update Profile
 // Update Profile
 // Update Profile
+// Update Profile
 app.put('/api/profile', authenticateToken, upload.single('avatar'), async (req, res) => {
   try {
     const { name } = req.body;
     const userId = req.user.id;
-    let picture = req.user.picture;
+    let picture = null;
 
     // If new avatar uploaded, update picture URL
     if (req.file) {
       picture = `/uploads/${req.file.filename}`;
     }
 
-    await db.execute('UPDATE users SET name = ?, picture = ? WHERE id = ?', [name, picture, userId]);
+    try {
+      await db.execute('UPDATE users SET name = ?' + (picture ? ', picture = ?' : '') + ' WHERE id = ?',
+        picture ? [name, picture, userId] : [name, userId]
+      );
+    } catch (sqlErr) {
+      // If 'picture' column doesn't exist (ER_BAD_FIELD_ERROR), fallback to name only
+      if (sqlErr.code === 'ER_BAD_FIELD_ERROR' || sqlErr.code === 'ER_UNKNOWN_COLUMN') {
+        await db.execute('UPDATE users SET name = ? WHERE id = ?', [name, userId]);
+      } else {
+        throw sqlErr;
+      }
+    }
 
     // Refresh user data
-    const [rows] = await db.execute('SELECT id, name, email, picture FROM users WHERE id = ?', [userId]);
-    res.json({ message: 'Profile updated', user: rows[0] });
+    const [rows] = await db.execute('SELECT id, name, email FROM users WHERE id = ?', [userId]);
+    // Merge the picture (either new upload or existing from DB if valid) into the response
+    const updatedUser = { ...rows[0], picture: picture || rows[0].picture };
+
+    res.json({ message: 'Profile updated', user: updatedUser });
   } catch (err) {
     console.error(err);
     res.status(500).send('Error updating profile');
