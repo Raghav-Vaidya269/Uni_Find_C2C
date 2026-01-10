@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ShoppingBag, Search, GraduationCap, User, ChevronDown } from 'lucide-react';
+import PostItemModal from './components/PostItem/PostItemModal';
 
 const styles = {
   pageContainer: {
@@ -314,6 +315,7 @@ export default function UniFindMarketplace() {
   const [accountOpen, setAccountOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   const [theme, setTheme] = useState(true);
+  const [postItemOpen, setPostItemOpen] = useState(false);
 
   const marketplaceItems = [
     { id: 1, title: 'Text', price: 0, description: 'Body text.' },
@@ -341,7 +343,7 @@ export default function UniFindMarketplace() {
                 <span>Marketplace</span>
               </button>
               
-              <button style={styles.postBtn}>
+              <button style={styles.postBtn} onClick={() => setPostItemOpen(true)}>
                 Post Item
               </button>
 
@@ -481,6 +483,12 @@ export default function UniFindMarketplace() {
           <button style={styles.contactBtn}>Contact</button>
         </div>
       </footer>
+
+      {/* Post Item Modal */}
+      <PostItemModal 
+        isOpen={postItemOpen} 
+        onClose={() => setPostItemOpen(false)}
+      />
     </div>
   );
 }
