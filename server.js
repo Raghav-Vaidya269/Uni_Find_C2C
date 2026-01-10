@@ -141,6 +141,8 @@ app.get('/api/dashboard', authenticateToken, (req, res) => {
 });
 
 // Update Profile
+// Update Profile
+// Update Profile
 app.put('/api/profile', authenticateToken, upload.single('avatar'), async (req, res) => {
   try {
     const { name } = req.body;
@@ -181,6 +183,7 @@ app.get('/api/my-items', authenticateToken, async (req, res) => {
 // 2. Marketplace Items
 
 // Create Item
+// Create Item
 app.post('/api/items', authenticateToken, upload.array('images', 5), async (req, res) => {
   try {
     const { title, description, price, category } = req.body;
@@ -199,6 +202,7 @@ app.post('/api/items', authenticateToken, upload.array('images', 5), async (req,
   }
 });
 
+// Get All Items
 // Get All Items
 app.get('/api/items', async (req, res) => {
   try {
@@ -230,6 +234,7 @@ app.get('/api/items', async (req, res) => {
 });
 
 // Get Item Details
+// Get Item Details
 app.get('/api/items/:id', async (req, res) => {
   try {
     const [rows] = await db.execute(
@@ -248,43 +253,9 @@ app.get('/api/items/:id', async (req, res) => {
 
 // 3. Lost & Found
 
-app.post('/api/lost-found', authenticateToken, upload.single('image'), async (req, res) => {
-  try {
-    const { type, title, description, location, date_lost_found, contact_info } = req.body;
-    const userId = req.user.id;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-
-    const [result] = await db.execute(
-      `INSERT INTO lost_found (user_id, type, title, description, location, date_lost_found, image_url, contact_info) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, type, title, description, location, date_lost_found, imageUrl, contact_info]
-    );
-    res.status(201).json({ id: result.insertId, message: 'Post created successfully' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error creating lost/found post');
-  }
-});
-
-app.get('/api/lost-found', async (req, res) => {
-  try {
-    const { type } = req.query;
-    let query = 'SELECT lost_found.*, users.name as user_name FROM lost_found JOIN users ON lost_found.user_id = users.id WHERE status = "Open"';
-    const params = [];
-
-    if (type) {
-      query += ' AND type = ?';
-      params.push(type);
-    }
-
-    query += ' ORDER BY created_at DESC';
-    const [posts] = await db.execute(query, params);
-    res.json(posts);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error fetching lost/found posts');
-  }
-});
+// 3. Lost & Found (Missing from DB Schema)
+// app.post('/api/lost-found', ...); // Disabled
+// app.get('/api/lost-found', ...); // Disabled
 
 
 app.listen(PORT, () => {
