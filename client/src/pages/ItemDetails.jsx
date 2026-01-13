@@ -15,6 +15,7 @@ export default function ItemDetails() {
     const [replyText, setReplyText] = useState('');
     const [submittingComment, setSubmittingComment] = useState(false);
     const [buying, setBuying] = useState(false);
+    const [reserving, setReserving] = useState(false);
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -108,6 +109,43 @@ export default function ItemDetails() {
         }
     };
 
+    const handleReserve = async () => {
+        if (!user) {
+            alert('Please login to reserve items');
+            navigate('/login', { state: { from: `/items/${id}` } });
+            return;
+        }
+
+        if (window.confirm('Are you sure you want to reserve this item?')) {
+            setReserving(true);
+            try {
+                const { data } = await api.post(`/items/${id}/reserve`);
+                alert(data.message || 'Reservation successful!');
+                // Re-fetch to get booking_id and other details
+                const itemRes = await api.get(`/items/${id}`);
+                setItem(itemRes.data);
+            } catch (err) {
+                console.error('Reserve error:', err);
+                alert(err.response?.data?.error || 'Failed to reserve item');
+            } finally {
+                setReserving(false);
+            }
+        }
+    };
+
+    const handleCancel = async () => {
+        if (!window.confirm('Are you sure you want to cancel this booking? The item will be available for others again.')) return;
+
+        try {
+            await api.post(`/bookings/${item.booking_id}/cancel`);
+            alert('Booking cancelled successfully');
+            setItem(prev => ({ ...prev, status: 'available', booking_id: null, buyer_id: null }));
+        } catch (err) {
+            console.error('Cancel error:', err);
+            alert(err.response?.data?.error || 'Failed to cancel booking');
+        }
+    };
+
     if (loading) return <div className="p-8 text-center">Loading details...</div>;
     if (error || !item) return <div className="p-8 text-center text-red-500">{error || 'Item not found'}</div>;
 
@@ -162,8 +200,12 @@ export default function ItemDetails() {
                         {/* Seller Card */}
                         <div className="mt-auto bg-gray-50 p-6 rounded-xl border border-gray-100">
                             <div className="flex items-center mb-4">
-                                <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xl">
-                                    {item.seller_name?.[0]?.toUpperCase() || 'U'}
+                                <div className="h-12 w-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xl overflow-hidden">
+                                    {item.seller_picture ? (
+                                        <img src={item.seller_picture} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                        item.seller_name?.[0]?.toUpperCase() || 'U'
+                                    )}
                                 </div>
                                 <div className="ml-4">
                                     <h4 className="text-lg font-bold text-gray-900">{item.seller_name}</h4>
@@ -176,18 +218,39 @@ export default function ItemDetails() {
                                 <div className="w-full py-3 bg-gray-300 text-gray-700 rounded-lg font-medium text-center">
                                     Sold Out
                                 </div>
-                            ) : user && user.id === item.user_id ? (
+                            ) : item.status?.toLowerCase() === 'reserved' ? (
+                                <div className="space-y-4">
+                                    <div className="w-full py-3 bg-yellow-100 text-yellow-700 rounded-lg font-medium text-center">
+                                        Reserved
+                                    </div>
+                                    {(user && (user.id === item.uploaded_by || user.id === item.buyer_id)) && (
+                                        <button
+                                            onClick={handleCancel}
+                                            className="w-full py-2 text-sm text-red-600 hover:text-red-700 font-medium transition"
+                                        >
+                                            Cancel Reservation
+                                        </button>
+                                    )}
+                                </div>
+                            ) : user && user.id === item.uploaded_by ? (
                                 <div className="w-full py-3 bg-blue-100 text-blue-700 rounded-lg font-medium text-center">
                                     Your Item
                                 </div>
                             ) : (
-                                <div className="space-y-2">
+                                <div className="space-y-4">
                                     <button
                                         onClick={handleBuy}
-                                        disabled={buying}
+                                        disabled={buying || reserving}
                                         className="flex items-center justify-center w-full py-3 bg-green-600 hover:bg-green-700 active:scale-95 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {buying ? 'Processing...' : 'Buy Now'}
+                                    </button>
+                                    <button
+                                        onClick={handleReserve}
+                                        disabled={buying || reserving}
+                                        className="flex items-center justify-center w-full py-3 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {reserving ? 'Processing...' : 'Reserve Booking'}
                                     </button>
                                 </div>
                             )}

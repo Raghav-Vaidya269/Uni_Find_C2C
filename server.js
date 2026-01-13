@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { v7: uuidv7 } = require('uuid');
 require('dotenv').config();
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key_change_this';
 const express = require('express');
@@ -113,14 +114,15 @@ app.post('/api/auth/kumail', async (req, res) => {
       }
       // Create new user
       const userName = name || email.split('@')[0];
+      const userId = uuidv7();
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      const [result] = await db.execute(
-        'INSERT INTO users (name, email, password) VALUES (?, ?, ?)',
-        [userName, email, hashedPassword]
+      await db.execute(
+        'INSERT INTO users (id, name, email, password) VALUES (?, ?, ?, ?)',
+        [userId, userName, email, hashedPassword]
       );
-      user = { id: result.insertId, name: userName, email };
+      user = { id: userId, name: userName, email };
     } else {
       return res.status(400).json({ error: 'Invalid auth type' });
     }
@@ -322,7 +324,7 @@ app.get('/api/my-items', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const [items] = await db.execute(
-      'SELECT * FROM items WHERE user_id = ? ORDER BY created_at DESC',
+      'SELECT * FROM items WHERE uploaded_by = ? ORDER BY created_at DESC',
       [userId]
     );
     res.json(items);
@@ -343,7 +345,7 @@ app.post('/api/items', authenticateToken, upload.array('images', 5), async (req,
     const imageUrl = req.files.length > 0 ? `/uploads/${req.files[0].filename}` : null;
 
     const [result] = await db.execute(
-      'INSERT INTO items (user_id, title, description, price, category, image_url) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO items (uploaded_by, title, description, price, category, image_url) VALUES (?, ?, ?, ?, ?, ?)',
       [userId, title, description, price, category, imageUrl]
     );
 
@@ -359,12 +361,12 @@ app.post('/api/items', authenticateToken, upload.array('images', 5), async (req,
 app.get('/api/items', async (req, res) => {
   try {
     const { category, search, maxPrice } = req.query;
-    let query = 'SELECT items.*, users.name as seller_name FROM items JOIN users ON items.user_id = users.id WHERE status = "Available"';
+    let query = 'SELECT items.*, users.name as seller_name, users.picture as seller_picture FROM items JOIN users ON items.uploaded_by = users.id WHERE items.status = "available"';
     const params = [];
 
-    if (category && category !== 'All') {
-      query += ' AND category = ?';
-      params.push(category);
+    if (category && category.toLowerCase() !== 'all') {
+      query += ' AND LOWER(category) = ?';
+      params.push(category.toLowerCase());
     }
     if (search) {
       query += ' AND (title LIKE ? OR description LIKE ?)';
@@ -389,9 +391,13 @@ app.get('/api/items', async (req, res) => {
 app.get('/api/items/:id', async (req, res) => {
   try {
     const [rows] = await db.execute(
-      `SELECT items.*, users.name as seller_name, users.email as seller_email 
-         FROM items JOIN users ON items.user_id = users.id 
-         WHERE items.id = ?`,
+      `SELECT items.*, users.name as seller_name, users.email as seller_email, users.picture as seller_picture,
+              bookings.id as booking_id, bookings.user_id as buyer_id
+         FROM items 
+         JOIN users ON items.uploaded_by = users.id 
+         LEFT JOIN bookings ON items.id = bookings.item_id AND (bookings.status = 'reserved' OR bookings.status = 'confirmed')
+         WHERE items.id = ?
+         ORDER BY bookings.created_at DESC LIMIT 1`,
       [req.params.id]
     );
     if (rows.length === 0) return res.status(404).send('Item not found');
@@ -418,7 +424,7 @@ app.post('/api/items/:id/buy', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'Item is not available for purchase.' });
     }
 
-    if (item.user_id === userId) {
+    if (item.uploaded_by === userId) {
       return res.status(400).json({ error: 'You cannot buy your own item.' });
     }
 
@@ -503,6 +509,95 @@ app.post('/api/comments', authenticateToken, async (req, res) => {
   }
 });
 
+
+// --- Reservation & Purchases Routes ---
+
+// Reserve Item
+app.post('/api/items/:id/reserve', authenticateToken, async (req, res) => {
+  try {
+    const itemId = req.params.id;
+    const userId = req.user.id;
+
+    const [items] = await db.execute('SELECT * FROM items WHERE id = ?', [itemId]);
+    if (items.length === 0) return res.status(404).json({ error: 'Item not found' });
+
+    const item = items[0];
+    if (item.status !== 'available') {
+      return res.status(400).json({ error: 'Item is not available for reservation.' });
+    }
+
+    if (item.uploaded_by === userId) {
+      return res.status(400).json({ error: 'You cannot reserve your own item.' });
+    }
+
+    // 1. Create Booking
+    await db.execute(
+      'INSERT INTO bookings (item_id, user_id, booked_quantity, status) VALUES (?, ?, ?, ?)',
+      [itemId, userId, 1, 'reserved']
+    );
+
+    // 2. Update Item Status
+    await db.execute('UPDATE items SET status = ? WHERE id = ?', ['reserved', itemId]);
+
+    res.json({ message: 'Item reserved successfully!', itemId: itemId });
+  } catch (err) {
+    console.error('Reserve Item error:', err);
+    res.status(500).json({ error: 'Failed to reserve item.' });
+  }
+});
+
+// Cancel Reservation/Booking
+app.post('/api/bookings/:id/cancel', authenticateToken, async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.user.id;
+
+    // Fetch booking and item info
+    const [bookings] = await db.execute(
+      'SELECT b.*, i.uploaded_by as seller_id FROM bookings b JOIN items i ON b.item_id = i.id WHERE b.id = ?',
+      [bookingId]
+    );
+
+    if (bookings.length === 0) return res.status(404).json({ error: 'Booking not found' });
+
+    const booking = bookings[0];
+
+    // Only buyer or seller can cancel
+    if (booking.user_id !== userId && booking.seller_id !== userId) {
+      return res.status(403).json({ error: 'You are not authorized to cancel this booking.' });
+    }
+
+    // Update booking status
+    await db.execute('UPDATE bookings SET status = "cancelled" WHERE id = ?', [bookingId]);
+
+    // Set item back to available
+    await db.execute('UPDATE items SET status = "available" WHERE id = ?', [booking.item_id]);
+
+    res.json({ message: 'Booking cancelled and item is now available.' });
+  } catch (err) {
+    console.error('Cancel Booking error:', err);
+    res.status(500).json({ error: 'Failed to cancel booking.' });
+  }
+});
+
+// Get My Purchases
+app.get('/api/my-purchases', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const [purchases] = await db.execute(
+      `SELECT items.*, bookings.status as booking_status, bookings.id as booking_id 
+       FROM bookings 
+       JOIN items ON bookings.item_id = items.id 
+       WHERE bookings.user_id = ? 
+       ORDER BY bookings.created_at DESC`,
+      [userId]
+    );
+    res.json(purchases);
+  } catch (err) {
+    console.error('Error fetching purchases:', err);
+    res.status(500).json({ error: 'Failed to fetch purchases' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

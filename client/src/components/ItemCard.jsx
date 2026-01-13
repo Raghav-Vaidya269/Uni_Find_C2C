@@ -29,11 +29,26 @@ export default function ItemCard({ item }) {
                         alt={item.title}
                         className="w-full h-full object-cover"
                     />
-                    {item.status === 'Sold' && (
+                    {item.status?.toLowerCase() === 'sold' && (
                         <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
                             SOLD
                         </div>
                     )}
+                    {item.status?.toLowerCase() === 'reserved' && (
+                        <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded">
+                            RESERVED
+                        </div>
+                    )}
+                    <div className="absolute bottom-2 left-2 flex items-center bg-white/90 backdrop-blur-sm rounded-full pr-3 py-0.5 shadow-sm">
+                        <div className="h-6 w-6 rounded-full bg-blue-500 flex items-center justify-center text-[10px] text-white font-bold overflow-hidden">
+                            {item.seller_picture ? (
+                                <img src={item.seller_picture} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                                item.seller_name?.[0]?.toUpperCase() || 'U'
+                            )}
+                        </div>
+                        <span className="text-[10px] font-bold ml-2 text-gray-800">{item.seller_name}</span>
+                    </div>
                 </div>
                 <div className="p-4">
                     <div className="flex justify-between items-start">
