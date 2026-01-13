@@ -583,14 +583,18 @@ app.post('/api/bookings/:id/cancel', authenticateToken, async (req, res) => {
 app.get('/api/my-purchases', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
+    console.log(`[DEBUG] Fetching purchases for user: ${userId}`);
     const [purchases] = await db.execute(
       `SELECT items.*, bookings.status as booking_status, bookings.id as booking_id 
        FROM bookings 
        JOIN items ON bookings.item_id = items.id 
        WHERE bookings.user_id = ? 
+         AND bookings.status IN ('confirmed', 'reserved') 
+         AND items.status != 'available'
        ORDER BY bookings.created_at DESC`,
       [userId]
     );
+    console.log(`[DEBUG] Found ${purchases.length} active purchases/reservations`);
     res.json(purchases);
   } catch (err) {
     console.error('Error fetching purchases:', err);

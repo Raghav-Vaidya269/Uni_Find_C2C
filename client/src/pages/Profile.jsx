@@ -112,7 +112,7 @@ export default function Profile() {
 
     // Calculate Counts
     const activeCount = myItems.length; // For now assuming all my items are active or sold, total listings
-    const soldCount = myItems.filter(i => i.status === 'Sold').length;
+    const soldCount = myItems.filter(i => i.status?.toLowerCase() === 'sold').length;
 
     // Filter for Display
     const displayedItems = activeTab === 'active'
