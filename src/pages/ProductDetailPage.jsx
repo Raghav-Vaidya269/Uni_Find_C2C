@@ -3,18 +3,20 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Phone, Heart, ChevronLeft } from 'lucide-react';
 import { Header } from '../components/Header';
 import { styles } from '../components/ProductDetail/productDetailStyles';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
+  const { theme } = useTheme();
 
   // Sample product data - in real app this would come from API
   const products = [
-    { 
-      id: 1, 
-      title: 'T sclae', 
-      price: 500, 
+    {
+      id: 1,
+      title: 'T sclae',
+      price: 500,
       description: 'It has been used for 1sem and now i wanna sell it',
       category: 'Stationery',
       condition: 'Good',
@@ -24,10 +26,10 @@ export default function ProductDetailPage() {
       sellerPhone: '9283498390',
       image: null,
     },
-    { 
-      id: 2, 
-      title: 'Laptop', 
-      price: 45000, 
+    {
+      id: 2,
+      title: 'Laptop',
+      price: 45000,
       description: 'Dell Inspiron 15, i5 processor, 8GB RAM',
       category: 'Electronics',
       condition: 'Like New',
@@ -37,10 +39,10 @@ export default function ProductDetailPage() {
       sellerPhone: '9841234567',
       image: null,
     },
-    { 
-      id: 3, 
-      title: 'Physics Textbook', 
-      price: 300, 
+    {
+      id: 3,
+      title: 'Physics Textbook',
+      price: 300,
       description: 'NCERT Physics class 12, complete with notes',
       category: 'Books',
       condition: 'Good',
@@ -50,10 +52,10 @@ export default function ProductDetailPage() {
       sellerPhone: '9876543210',
       image: null,
     },
-    { 
-      id: 4, 
-      title: 'Study Table', 
-      price: 2500, 
+    {
+      id: 4,
+      title: 'Study Table',
+      price: 2500,
       description: 'Wooden study table, good condition, spacious',
       category: 'Furniture',
       condition: 'Fair',
@@ -72,7 +74,7 @@ export default function ProductDetailPage() {
       <div style={{ ...styles.overlay, backgroundColor: '#fff' }}>
         <div style={{ textAlign: 'center', color: '#111827' }}>
           <p>Product not found</p>
-          <button 
+          <button
             onClick={() => navigate('/')}
             style={{ marginTop: '1rem', padding: '0.5rem 1rem', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '0.375rem', cursor: 'pointer' }}
           >
@@ -90,12 +92,12 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: theme ? '#f9fafb' : '#111827', transition: 'background-color 0.3s ease' }}>
       {/* Header */}
       <Header />
 
       {/* Back Button */}
-      <div style={{ backgroundColor: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '1rem' }}>
+      <div style={{ backgroundColor: theme ? 'white' : '#1f2937', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '1rem', transition: 'background-color 0.3s ease' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <button
             onClick={() => navigate('/')}
@@ -105,7 +107,7 @@ export default function ProductDetailPage() {
               gap: '0.5rem',
               backgroundColor: 'transparent',
               border: 'none',
-              color: '#4f46e5',
+              color: theme ? '#4f46e5' : '#818cf8',
               cursor: 'pointer',
               fontSize: '0.9rem',
               fontWeight: '500',
@@ -120,10 +122,10 @@ export default function ProductDetailPage() {
       {/* Main Content */}
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '3rem 1rem' }}>
         {/* Product Card */}
-        <div style={{ backgroundColor: 'white', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '2rem' }}>
+        <div style={{ backgroundColor: theme ? 'white' : '#1f2937', borderRadius: '0.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', padding: '2rem', transition: 'background-color 0.3s ease' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '45% 55%', gap: '3rem' }}>
             {/* Left Side - Image */}
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f3f4f6', borderRadius: '0.5rem', minHeight: '500px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: theme ? '#f3f4f6' : '#374151', borderRadius: '0.5rem', minHeight: '500px' }}>
               <img
                 src={item.image || 'https://via.placeholder.com/600x600?text=No+Image'}
                 alt={item.title}
@@ -137,22 +139,22 @@ export default function ProductDetailPage() {
             {/* Right Side - Details */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {/* Title */}
-              <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#111827', margin: 0 }}>{item.title}</h1>
+              <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: theme ? '#111827' : '#f9fafb', margin: 0 }}>{item.title}</h1>
 
               {/* Price */}
               <div>
-                <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#4f46e5' }}>Rs {item.price}</span>
+                <span style={{ fontSize: '2.5rem', fontWeight: 'bold', color: theme ? '#4f46e5' : '#818cf8' }}>Rs {item.price}</span>
               </div>
 
               {/* Category and Condition Row */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
                 <div>
                   <label style={{ fontSize: '0.875rem', color: '#9ca3af', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Category</label>
-                  <span style={{ display: 'inline-block', backgroundColor: '#e5e7eb', color: '#374151', padding: '0.35rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500' }}>{item.category}</span>
+                  <span style={{ display: 'inline-block', backgroundColor: theme ? '#e5e7eb' : '#374151', color: theme ? '#374151' : '#e5e7eb', padding: '0.35rem 0.75rem', borderRadius: '0.375rem', fontSize: '0.875rem', fontWeight: '500' }}>{item.category}</span>
                 </div>
                 <div>
                   <label style={{ fontSize: '0.875rem', color: '#9ca3af', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Condition</label>
-                  <span style={{ fontSize: '0.875rem', color: '#374151', fontWeight: '500' }}>{item.condition}</span>
+                  <span style={{ fontSize: '0.875rem', color: theme ? '#374151' : '#e5e7eb', fontWeight: '500' }}>{item.condition}</span>
                 </div>
               </div>
 
@@ -165,7 +167,7 @@ export default function ProductDetailPage() {
               {/* Description */}
               <div>
                 <label style={{ fontSize: '0.875rem', color: '#9ca3af', fontWeight: '500', marginBottom: '0.5rem', display: 'block' }}>Description</label>
-                <p style={{ fontSize: '0.875rem', color: '#374151', lineHeight: '1.6', margin: 0 }}>{item.description}</p>
+                <p style={{ fontSize: '0.875rem', color: theme ? '#374151' : '#e5e7eb', lineHeight: '1.6', margin: 0 }}>{item.description}</p>
               </div>
 
               {/* Posted Time */}
@@ -175,12 +177,12 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Divider */}
-              <div style={{ height: '1px', backgroundColor: '#e5e7eb' }}></div>
+              <div style={{ height: '1px', backgroundColor: theme ? '#e5e7eb' : '#374151' }}></div>
 
               {/* Quantity and Buttons */}
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                  <span style={{ fontSize: '0.875rem', color: '#374151', fontWeight: '500' }}>Quantity</span>
+                  <span style={{ fontSize: '0.875rem', color: theme ? '#374151' : '#e5e7eb', fontWeight: '500' }}>Quantity</span>
                   <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #d1d5db', borderRadius: '0.375rem', overflow: 'hidden', backgroundColor: 'white', width: 'fit-content' }}>
                     <button
                       onClick={() => handleQuantityChange(quantity - 1)}
@@ -211,17 +213,17 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Divider */}
-              <div style={{ height: '1px', backgroundColor: '#e5e7eb' }}></div>
+              <div style={{ height: '1px', backgroundColor: theme ? '#e5e7eb' : '#374151' }}></div>
 
               {/* Contact Seller */}
               <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: '600', color: '#111827', margin: '0 0 1rem 0' }}>Contact Seller</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: '600', color: theme ? '#111827' : '#f9fafb', margin: '0 0 1rem 0' }}>Contact Seller</h3>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', backgroundColor: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '600', fontSize: '1.125rem' }}>
                     {item.sellerName?.charAt(0) || 'U'}
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#111827' }}>{item.sellerName}</div>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: theme ? '#111827' : '#f9fafb' }}>{item.sellerName}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#4f46e5', fontSize: '0.875rem' }}>
                       <Phone size={16} color="#4f46e5" />
                       <span>{item.sellerPhone}</span>

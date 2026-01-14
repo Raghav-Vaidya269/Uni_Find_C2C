@@ -2,18 +2,30 @@ import React from 'react';
 import { ShoppingBag, User } from 'lucide-react';
 import { styles } from './styles';
 
-export function MarketplaceButton({ onClick }) {
+export function MarketplaceButton({ onClick, theme = true }) {
+  const buttonStyles = {
+    ...styles.marketplaceBtn,
+    backgroundColor: theme ? '#4f46e5' : '#818cf8',
+    transition: 'background-color 0.3s ease',
+  };
+
   return (
-    <button style={styles.marketplaceBtn} onClick={onClick}>
+    <button style={buttonStyles} onClick={onClick}>
       <ShoppingBag size={20} />
       <span>Marketplace</span>
     </button>
   );
 }
 
-export function PostButton({ onClick }) {
+export function PostButton({ onClick, theme = true }) {
+  const buttonStyles = {
+    ...styles.postBtn,
+    backgroundColor: theme ? '#4f46e5' : '#818cf8',
+    transition: 'background-color 0.3s ease',
+  };
+
   return (
-    <button style={styles.postBtn} onClick={onClick}>
+    <button style={buttonStyles} onClick={onClick}>
       Post Item
     </button>
   );
@@ -21,7 +33,7 @@ export function PostButton({ onClick }) {
 
 export function AccountButton({ onClick, isOpen }) {
   return (
-    <button 
+    <button
       onClick={onClick}
       style={{
         ...styles.accountBtn,

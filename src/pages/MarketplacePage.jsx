@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ShoppingBag } from 'lucide-react';
 import { Header } from '../components/Header';
+import { useTheme } from '../context/ThemeContext';
 
 const styles = {
   pageContainer: {
@@ -313,10 +314,10 @@ const styles = {
 };
 
 const marketplaceItems = [
-  { 
-    id: 1, 
-    title: 'T sclae', 
-    price: 500, 
+  {
+    id: 1,
+    title: 'T sclae',
+    price: 500,
     description: 'It has been used for 1sem and now i wanna sell it',
     category: 'Stationery',
     condition: 'Good',
@@ -326,10 +327,10 @@ const marketplaceItems = [
     sellerPhone: '9283498390',
     image: null,
   },
-  { 
-    id: 2, 
-    title: 'Laptop', 
-    price: 45000, 
+  {
+    id: 2,
+    title: 'Laptop',
+    price: 45000,
     description: 'Dell Inspiron 15, i5 processor, 8GB RAM',
     category: 'Electronics',
     condition: 'Like New',
@@ -339,10 +340,10 @@ const marketplaceItems = [
     sellerPhone: '9841234567',
     image: null,
   },
-  { 
-    id: 3, 
-    title: 'Physics Textbook', 
-    price: 300, 
+  {
+    id: 3,
+    title: 'Physics Textbook',
+    price: 300,
     description: 'NCERT Physics class 12, complete with notes',
     category: 'Books',
     condition: 'Good',
@@ -352,10 +353,10 @@ const marketplaceItems = [
     sellerPhone: '9876543210',
     image: null,
   },
-  { 
-    id: 4, 
-    title: 'Study Table', 
-    price: 2500, 
+  {
+    id: 4,
+    title: 'Study Table',
+    price: 2500,
     description: 'Wooden study table, good condition, spacious',
     category: 'Furniture',
     condition: 'Fair',
@@ -370,33 +371,88 @@ const marketplaceItems = [
 export default function MarketplacePage() {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState('all');
+  const { theme } = useTheme();
 
   const handleItemClick = (itemId) => {
     navigate(`/product/${itemId}`);
   };
 
+  const pageStyles = {
+    ...styles.pageContainer,
+    backgroundColor: theme ? '#f9fafb' : '#111827',
+  };
+
+  const heroStyles = {
+    ...styles.hero,
+    background: theme ? 'linear-gradient(to right, #4f46e5, #4338ca)' : 'linear-gradient(to right, #6366f1, #4f46e5)',
+  };
+
+  const searchBarStyles = {
+    ...styles.searchBar,
+    backgroundColor: theme ? 'white' : '#1f2937',
+  };
+
+  const searchInputStyles = {
+    ...styles.searchInput,
+    backgroundColor: theme ? 'white' : '#1f2937',
+    color: theme ? '#374151' : '#e5e7eb',
+  };
+
+  const categorySelectStyles = {
+    ...styles.categorySelect,
+    backgroundColor: theme ? 'white' : '#1f2937',
+    color: theme ? '#374151' : '#e5e7eb',
+    borderLeftColor: theme ? '#e5e7eb' : '#374151',
+  };
+
+  const titleStyles = {
+    ...styles.title,
+    color: theme ? '#111827' : '#f9fafb',
+  };
+
+  const itemCardStyles = {
+    ...styles.itemCard,
+    backgroundColor: theme ? 'white' : '#1f2937',
+    transition: 'background-color 0.3s ease',
+  };
+
+  const itemTitleStyles = {
+    ...styles.itemTitle,
+    color: theme ? '#111827' : '#f9fafb',
+  };
+
+  const itemPriceStyles = {
+    ...styles.itemPrice,
+    color: theme ? '#111827' : '#f9fafb',
+  };
+
+  const itemDescriptionStyles = {
+    ...styles.itemDescription,
+    color: theme ? '#6b7280' : '#9ca3af',
+  };
+
   return (
-    <div style={styles.pageContainer}>
+    <div style={pageStyles}>
       {/* Header */}
       <Header />
 
       {/* Hero Section */}
-      <div style={styles.hero}>
+      <div style={heroStyles}>
         <div style={styles.heroContent}>
           <h1 style={styles.heroTitle}>Welcome to UNI-find</h1>
           <p style={styles.heroSubtitle}>Kathmandu University's Student Marketplace</p>
-          
+
           {/* Search Bar */}
-          <div style={styles.searchBar}>
+          <div style={searchBarStyles}>
             <div style={styles.searchInputWrapper}>
               <Search size={20} color="#9ca3af" />
               <input
                 type="text"
                 placeholder="Search for items, books, electronics..."
-                style={styles.searchInput}
+                style={searchInputStyles}
               />
             </div>
-            <select style={styles.categorySelect}>
+            <select style={categorySelectStyles}>
               <option>All Categories</option>
               <option>Books</option>
               <option>Electronics</option>
@@ -410,27 +466,39 @@ export default function MarketplacePage() {
       <main style={styles.main}>
         <div style={styles.sectionHeader}>
           <div style={styles.sectionTitle}>
-            <ShoppingBag size={32} color="#1f2937" />
-            <h2 style={styles.title}>Marketplace</h2>
+            <ShoppingBag size={32} color={theme ? '#1f2937' : '#f9fafb'} />
+            <h2 style={titleStyles}>Marketplace</h2>
           </div>
 
           {/* Filter Buttons */}
           <div style={styles.filterButtons}>
             <button
               onClick={() => setActiveFilter('all')}
-              style={styles.filterBtn(activeFilter === 'all')}
+              style={{
+                ...styles.filterBtn(activeFilter === 'all'),
+                backgroundColor: activeFilter === 'all' ? (theme ? '#4f46e5' : '#818cf8') : (theme ? 'white' : '#374151'),
+                color: activeFilter === 'all' ? 'white' : (theme ? '#374151' : '#e5e7eb'),
+              }}
             >
               All Items
             </button>
             <button
               onClick={() => setActiveFilter('available')}
-              style={styles.filterBtn(activeFilter === 'available')}
+              style={{
+                ...styles.filterBtn(activeFilter === 'available'),
+                backgroundColor: activeFilter === 'available' ? (theme ? '#4f46e5' : '#818cf8') : (theme ? 'white' : '#374151'),
+                color: activeFilter === 'available' ? 'white' : (theme ? '#374151' : '#e5e7eb'),
+              }}
             >
               Available
             </button>
             <button
               onClick={() => setActiveFilter('pending')}
-              style={styles.filterBtn(activeFilter === 'pending')}
+              style={{
+                ...styles.filterBtn(activeFilter === 'pending'),
+                backgroundColor: activeFilter === 'pending' ? (theme ? '#4f46e5' : '#818cf8') : (theme ? 'white' : '#374151'),
+                color: activeFilter === 'pending' ? 'white' : (theme ? '#374151' : '#e5e7eb'),
+              }}
             >
               Pending
             </button>
@@ -440,9 +508,9 @@ export default function MarketplacePage() {
         {/* Items Grid */}
         <div style={styles.itemsGrid}>
           {marketplaceItems.map((item) => (
-            <div 
-              key={item.id} 
-              style={styles.itemCard}
+            <div
+              key={item.id}
+              style={itemCardStyles}
               onClick={() => handleItemClick(item.id)}
               role="button"
               tabIndex={0}
@@ -452,11 +520,14 @@ export default function MarketplacePage() {
                 }
               }}
             >
-              <div style={styles.itemImage}></div>
+              <div style={{
+                ...styles.itemImage,
+                backgroundColor: theme ? '#e5e7eb' : '#374151',
+              }}></div>
               <div style={styles.itemContent}>
-                <h3 style={styles.itemTitle}>{item.title}</h3>
-                <p style={styles.itemPrice}>Rs {item.price}</p>
-                <p style={styles.itemDescription}>{item.description}</p>
+                <h3 style={itemTitleStyles}>{item.title}</h3>
+                <p style={itemPriceStyles}>Rs {item.price}</p>
+                <p style={itemDescriptionStyles}>{item.description}</p>
               </div>
             </div>
           ))}

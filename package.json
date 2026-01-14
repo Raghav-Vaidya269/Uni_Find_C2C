@@ -2,7 +2,6 @@
   "name": "uni-find-c2c",
   "version": "1.0.0",
   "description": "University C2C Marketplace",
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

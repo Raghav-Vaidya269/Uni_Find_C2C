@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import PostItemForm from './PostItemForm';
 import { styles } from './postItemStyles';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function PostItemModal({ isOpen, onClose }) {
   const [formData, setFormData] = useState({
@@ -14,6 +15,7 @@ export default function PostItemModal({ isOpen, onClose }) {
     contactInfo: '',
     imageUrl: '',
   });
+  const { theme } = useTheme();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,15 +58,37 @@ export default function PostItemModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
+  const modalStyles = {
+    ...styles.modal,
+    backgroundColor: theme ? 'white' : '#1f2937',
+    transition: 'background-color 0.3s ease',
+  };
+
+  const headerStyles = {
+    ...styles.header,
+    backgroundColor: theme ? 'white' : '#1f2937',
+    borderBottomColor: theme ? '#e5e7eb' : '#374151',
+  };
+
+  const titleStyles = {
+    ...styles.title,
+    color: theme ? '#111827' : '#f9fafb',
+  };
+
+  const closeButtonStyles = {
+    ...styles.closeButton,
+    color: theme ? '#6b7280' : '#9ca3af',
+  };
+
   return (
     <div style={styles.overlay}>
-      <div style={styles.modal}>
+      <div style={modalStyles}>
         {/* Header */}
-        <div style={styles.header}>
-          <h2 style={styles.title}>Post Marketplace Item</h2>
+        <div style={headerStyles}>
+          <h2 style={titleStyles}>Post Marketplace Item</h2>
           <button
             onClick={handleCancel}
-            style={styles.closeButton}
+            style={closeButtonStyles}
             aria-label="Close modal"
           >
             <X size={24} />
@@ -77,6 +101,7 @@ export default function PostItemModal({ isOpen, onClose }) {
           onChange={handleChange}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
+          theme={theme}
         />
       </div>
     </div>

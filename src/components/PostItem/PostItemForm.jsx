@@ -25,12 +25,55 @@ export default function PostItemForm({
   onChange,
   onSubmit,
   onCancel,
+  theme = true,
 }) {
+  const labelStyles = {
+    ...styles.label,
+    color: theme ? '#111827' : '#f9fafb',
+  };
+
+  const inputStyles = {
+    ...styles.input,
+    backgroundColor: theme ? 'white' : '#374151',
+    borderColor: theme ? '#d1d5db' : '#4b5563',
+    color: theme ? '#111827' : '#f9fafb',
+  };
+
+  const selectStyles = {
+    ...styles.select,
+    backgroundColor: theme ? 'white' : '#374151',
+    borderColor: theme ? '#d1d5db' : '#4b5563',
+    color: theme ? '#111827' : '#f9fafb',
+  };
+
+  const textareaStyles = {
+    ...styles.textarea,
+    backgroundColor: theme ? 'white' : '#374151',
+    borderColor: theme ? '#d1d5db' : '#4b5563',
+    color: theme ? '#111827' : '#f9fafb',
+  };
+
+  const formActionsStyles = {
+    ...styles.formActions,
+    borderTopColor: theme ? '#e5e7eb' : '#374151',
+  };
+
+  const cancelButtonStyles = {
+    ...styles.cancelButton,
+    backgroundColor: theme ? '#d1d5db' : '#4b5563',
+    color: theme ? '#111827' : '#f9fafb',
+  };
+
+  const submitButtonStyles = {
+    ...styles.submitButton,
+    backgroundColor: theme ? '#4f46e5' : '#818cf8',
+  };
+
   return (
     <form onSubmit={onSubmit} style={styles.formContainer}>
       {/* Title Field */}
       <div style={styles.formGroup}>
-        <label htmlFor="title" style={styles.label}>
+        <label htmlFor="title" style={labelStyles}>
           Title <span style={styles.required}>*</span>
         </label>
         <input
@@ -40,7 +83,7 @@ export default function PostItemForm({
           value={formData.title}
           onChange={onChange}
           placeholder="e.g., iPhone 13 Pro Max"
-          style={styles.input}
+          style={inputStyles}
           required
         />
       </div>
@@ -48,7 +91,7 @@ export default function PostItemForm({
       {/* Category and Condition Row */}
       <div style={styles.twoColumnRow}>
         <div style={styles.formGroup}>
-          <label htmlFor="category" style={styles.label}>
+          <label htmlFor="category" style={labelStyles}>
             Category <span style={styles.required}>*</span>
           </label>
           <select
@@ -56,7 +99,7 @@ export default function PostItemForm({
             name="category"
             value={formData.category}
             onChange={onChange}
-            style={styles.select}
+            style={selectStyles}
             required
           >
             {CATEGORIES.map((cat) => (
@@ -68,7 +111,7 @@ export default function PostItemForm({
         </div>
 
         <div style={styles.formGroup}>
-          <label htmlFor="condition" style={styles.label}>
+          <label htmlFor="condition" style={labelStyles}>
             Condition <span style={styles.required}>*</span>
           </label>
           <select
@@ -76,7 +119,7 @@ export default function PostItemForm({
             name="condition"
             value={formData.condition}
             onChange={onChange}
-            style={styles.select}
+            style={selectStyles}
             required
           >
             {CONDITIONS.map((cond) => (
@@ -93,7 +136,7 @@ export default function PostItemForm({
 
       {/* Price Field */}
       <div style={styles.formGroup}>
-        <label htmlFor="price" style={styles.label}>
+        <label htmlFor="price" style={labelStyles}>
           Price (NPR) <span style={styles.required}>*</span>
         </label>
         <input
@@ -103,7 +146,7 @@ export default function PostItemForm({
           value={formData.price}
           onChange={onChange}
           placeholder="5000"
-          style={styles.input}
+          style={inputStyles}
           min="0"
           required
         />
@@ -111,7 +154,7 @@ export default function PostItemForm({
 
       {/* Description Field */}
       <div style={styles.formGroup}>
-        <label htmlFor="description" style={styles.label}>
+        <label htmlFor="description" style={labelStyles}>
           Description <span style={styles.required}>*</span>
         </label>
         <textarea
@@ -120,7 +163,7 @@ export default function PostItemForm({
           value={formData.description}
           onChange={onChange}
           placeholder="Describe your item in detail..."
-          style={styles.textarea}
+          style={textareaStyles}
           rows="5"
           required
         />
@@ -129,7 +172,7 @@ export default function PostItemForm({
       {/* Your Name and Contact Info Row */}
       <div style={styles.twoColumnRow}>
         <div style={styles.formGroup}>
-          <label htmlFor="yourName" style={styles.label}>
+          <label htmlFor="yourName" style={labelStyles}>
             Your Name <span style={styles.required}>*</span>
           </label>
           <input
@@ -139,13 +182,13 @@ export default function PostItemForm({
             value={formData.yourName}
             onChange={onChange}
             placeholder="John Doe"
-            style={styles.input}
+            style={inputStyles}
             required
           />
         </div>
 
         <div style={styles.formGroup}>
-          <label htmlFor="contactInfo" style={styles.label}>
+          <label htmlFor="contactInfo" style={labelStyles}>
             Contact Info <span style={styles.required}>*</span>
           </label>
           <input
@@ -155,7 +198,7 @@ export default function PostItemForm({
             value={formData.contactInfo}
             onChange={onChange}
             placeholder="Phone or Email"
-            style={styles.input}
+            style={inputStyles}
             required
           />
         </div>
@@ -163,7 +206,7 @@ export default function PostItemForm({
 
       {/* Image URL Field */}
       <div style={styles.formGroup}>
-        <label htmlFor="imageUrl" style={styles.label}>
+        <label htmlFor="imageUrl" style={labelStyles}>
           Image URL <span style={styles.optional}>(optional)</span>
         </label>
         <input
@@ -173,22 +216,22 @@ export default function PostItemForm({
           value={formData.imageUrl}
           onChange={onChange}
           placeholder="https://example.com/image.jpg"
-          style={styles.input}
+          style={inputStyles}
         />
       </div>
 
       {/* Form Actions */}
-      <div style={styles.formActions}>
+      <div style={formActionsStyles}>
         <button
           type="button"
           onClick={onCancel}
-          style={styles.cancelButton}
+          style={cancelButtonStyles}
         >
           Cancel
         </button>
         <button
           type="submit"
-          style={styles.submitButton}
+          style={submitButtonStyles}
         >
           Post Item
         </button>
