@@ -145,118 +145,7 @@ app.post('/api/auth/kumail', async (req, res) => {
   }
 });
 
-// Forgot Password - Send OTP
-app.post('/api/auth/forgot-password', async (req, res) => {
-  console.log('==========================================');
-  console.log('[FORGOT PASSWORD] Endpoint called');
-  console.log('[FORGOT PASSWORD] Email:', req.body.email);
-  console.log('==========================================');
 
-  try {
-    const { email } = req.body;
-
-    // Check if user exists
-    const [users] = await db.execute('SELECT id FROM users WHERE email = ?', [email]);
-    if (users.length === 0) {
-      // Security: Don't reveal if user doesn't exist, just say sent if valid email format
-      // But for better UX in prototype, we can be honest or generic
-      return res.status(404).json({ error: 'User with this email does not exist.' });
-    }
-
-    // Generate 6 digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-
-    // Save to DB
-    await db.execute(
-      'UPDATE users SET reset_otp = ?, reset_otp_expires = ? WHERE email = ?',
-      [otp, expiry, email]
-    );
-
-    // Send Email
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      const nodemailer = require('nodemailer');
-      const transporter = nodemailer.createTransport({
-        service: 'gmail', // Or use host/port from env if needed
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS
-        }
-      });
-
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: 'UniFind - Password Reset OTP',
-        text: `Your password reset verification code is: ${otp}\n\nThis code expires in 15 minutes.`
-      };
-
-      await transporter.sendMail(mailOptions);
-      res.json({ message: 'Password reset code sent to your email.' });
-    } else {
-      // Fallback to Mock if no credentials
-      console.log('---------------------------------------------------');
-      console.log(`[MOCK EMAIL SERVICE] To: ${email}`);
-      console.log(`[MOCK EMAIL SERVICE] Subject: Password Reset OTP`);
-      console.log(`[MOCK EMAIL SERVICE] Your verification code is: ${otp}`);
-      console.log('---------------------------------------------------');
-      console.log('To send real emails, set EMAIL_USER and EMAIL_PASS in .env');
-
-      res.json({ message: 'Password reset code sent (Mock Mode - Check Server Console).' });
-    }
-
-  } catch (err) {
-    console.error('==========================================');
-    console.error('Forgot Password error:', err);
-    console.error('Error message:', err.message);
-    console.error('Error code:', err.code);
-    console.error('==========================================');
-    res.status(500).json({ error: 'Failed to process request' });
-  }
-});
-
-// Reset Password - Verify OTP and Update
-app.post('/api/auth/reset-password', async (req, res) => {
-  try {
-    const { email, otp, newPassword } = req.body;
-
-    if (!newPassword || newPassword.length < 6) {
-      return res.status(400).json({ error: 'Password must be at least 6 characters long.' });
-    }
-
-    // Verify OTP
-    const [users] = await db.execute(
-      'SELECT id, reset_otp, reset_otp_expires FROM users WHERE email = ?',
-      [email]
-    );
-
-    if (users.length === 0) return res.status(400).json({ error: 'Invalid request' });
-
-    const user = users[0];
-
-    if (!user.reset_otp || user.reset_otp !== otp) {
-      return res.status(400).json({ error: 'Invalid confirmation code' });
-    }
-
-    if (new Date(user.reset_otp_expires) < new Date()) {
-      return res.status(400).json({ error: 'Confirmation code has expired. Please request a new one.' });
-    }
-
-    // Update Password and Clear OTP
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    await db.execute(
-      'UPDATE users SET password = ?, reset_otp = NULL, reset_otp_expires = NULL WHERE id = ?',
-      [hashedPassword, user.id]
-    );
-
-    res.json({ message: 'Password has been reset successfully. You can now login.' });
-
-  } catch (err) {
-    console.error('Reset Password error:', err);
-    res.status(500).json({ error: 'Failed to reset password' });
-  }
-});
 
 app.get('/api/dashboard', authenticateToken, async (req, res) => {
   try {
@@ -397,7 +286,7 @@ app.put('/api/items/:id', authenticateToken, async (req, res) => {
 app.get('/api/items', async (req, res) => {
   try {
     const { category, search, maxPrice } = req.query;
-    let query = 'SELECT items.*, users.name as seller_name, users.picture as seller_picture FROM items JOIN users ON items.uploaded_by = users.id WHERE items.status = "available"';
+    let query = 'SELECT items.*, users.name as seller_name, users.picture as seller_picture FROM items JOIN users ON items.uploaded_by = users.id WHERE items.status IN ("available", "reserved")';
     const params = [];
 
     if (category && category.toLowerCase() !== 'all') {
@@ -426,11 +315,14 @@ app.get('/api/items', async (req, res) => {
 app.get('/api/items/:id', async (req, res) => {
   try {
     const [rows] = await db.execute(
-      `SELECT items.*, users.name as seller_name, users.email as seller_email, users.picture as seller_picture,
-              bookings.id as booking_id, bookings.user_id as buyer_id
+      `SELECT items.*, 
+              seller.name as seller_name, seller.email as seller_email, seller.picture as seller_picture,
+              bookings.id as booking_id, bookings.user_id as buyer_id,
+              buyer.name as buyer_name, buyer.email as buyer_email
          FROM items 
-         JOIN users ON items.uploaded_by = users.id 
+         JOIN users as seller ON items.uploaded_by = seller.id 
          LEFT JOIN bookings ON items.id = bookings.item_id AND (bookings.status = 'reserved' OR bookings.status = 'confirmed')
+         LEFT JOIN users as buyer ON bookings.user_id = buyer.id
          WHERE items.id = ?
          ORDER BY bookings.created_at DESC LIMIT 1`,
       [req.params.id]
@@ -443,40 +335,68 @@ app.get('/api/items/:id', async (req, res) => {
   }
 });
 
-// Buy Item
-app.post('/api/items/:id/buy', authenticateToken, async (req, res) => {
+// Delete Item
+app.delete('/api/items/:id', authenticateToken, async (req, res) => {
   try {
     const itemId = req.params.id;
     const userId = req.user.id;
-    const quantity = 1; // Default to 1 for now
 
-    // 1. Check if item exists and is available
+    // Check ownership
     const [items] = await db.execute('SELECT * FROM items WHERE id = ?', [itemId]);
     if (items.length === 0) return res.status(404).json({ error: 'Item not found' });
 
-    const item = items[0];
-    if (item.status.toLowerCase() !== 'available') {
-      return res.status(400).json({ error: 'Item is not available for purchase.' });
+    if (items[0].uploaded_by !== userId) {
+      return res.status(403).json({ error: 'You are not authorized to delete this item.' });
     }
 
-    if (item.uploaded_by === userId) {
-      return res.status(400).json({ error: 'You cannot buy your own item.' });
-    }
+    // Delete item (foreign key ON DELETE CASCADE usually handles bookings/comments if set up, 
+    // but just in case, we might need to delete bookings manually if strict constraints exist. 
+    // Assuming simple DB or constraints set. If not, catching error).
+    // Let's assume we can just delete the item.
+    await db.execute('DELETE FROM items WHERE id = ?', [itemId]);
 
-    // 2. Create Booking
-    await db.execute(
-      'INSERT INTO bookings (item_id, user_id, booked_quantity, status) VALUES (?, ?, ?, ?)',
-      [itemId, userId, quantity, 'confirmed']
+    res.json({ message: 'Item deleted successfully' });
+  } catch (err) {
+    console.error('Delete item error:', err);
+    res.status(500).json({ error: 'Failed to delete item' });
+  }
+});
+
+// Confirm Reservation (Seller Only)
+app.post('/api/bookings/:id/confirm', authenticateToken, async (req, res) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.user.id;
+
+    // Fetch booking and item info
+    const [bookings] = await db.execute(
+      'SELECT b.*, i.uploaded_by as seller_id, i.id as item_id FROM bookings b JOIN items i ON b.item_id = i.id WHERE b.id = ?',
+      [bookingId]
     );
 
-    // 3. Update Item Status
-    await db.execute('UPDATE items SET status = ? WHERE id = ?', ['sold', itemId]);
+    if (bookings.length === 0) return res.status(404).json({ error: 'Booking not found' });
 
-    res.json({ message: 'Item purchased successfully!', itemId: itemId });
+    const booking = bookings[0];
 
+    // Only seller can confirm
+    if (booking.seller_id !== userId) {
+      return res.status(403).json({ error: 'Only the seller can confirm this deal.' });
+    }
+
+    if (booking.status !== 'reserved') {
+      return res.status(400).json({ error: 'Booking is not in reserved state.' });
+    }
+
+    // Update booking status
+    await db.execute('UPDATE bookings SET status = "confirmed" WHERE id = ?', [bookingId]);
+
+    // Update item status
+    await db.execute('UPDATE items SET status = "sold" WHERE id = ?', [booking.item_id]);
+
+    res.json({ message: 'Deal confirmed! Item marks as sold.' });
   } catch (err) {
-    console.error('Buy Item error:', err);
-    res.status(500).json({ error: 'Failed to purchase item.' });
+    console.error('Confirm Booking error:', err);
+    res.status(500).json({ error: 'Failed to confirm deal.' });
   }
 });
 

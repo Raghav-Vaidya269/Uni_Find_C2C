@@ -5,8 +5,7 @@ CREATE TABLE users (
   email varchar(255) NOT NULL,
   password varchar(255) NOT NULL,
   picture varchar(255) DEFAULT NULL,
-  reset_otp varchar(6) DEFAULT NULL,
-  reset_otp_expires datetime DEFAULT NULL,
+
   created_at timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY email (email)

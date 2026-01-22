@@ -29,13 +29,30 @@ export default function ItemCard({ item }) {
                         alt={item.title}
                         className="w-full h-full object-cover"
                     />
-                    {item.status?.toLowerCase() === 'sold' && (
-                        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                    {/* Status Badges */}
+                    {/* Priority: My Purchaes (booking_status) -> Marketplace (status) */}
+
+                    {/* My Purchases: Confirmed -> Deal Confirmed */}
+                    {item.booking_status === 'confirmed' && (
+                        <div className="absolute top-2 right-2 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
+                            Deal Confirmed
+                        </div>
+                    )}
+                    {/* My Purchases: Reserved -> Pending */}
+                    {item.booking_status === 'reserved' && (
+                        <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
+                            Pending
+                        </div>
+                    )}
+
+                    {/* Marketplace Fallbacks (if no booking_status) */}
+                    {!item.booking_status && item.status?.toLowerCase() === 'sold' && (
+                        <div className="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
                             SOLD
                         </div>
                     )}
-                    {item.status?.toLowerCase() === 'reserved' && (
-                        <div className="absolute top-2 right-2 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded">
+                    {!item.booking_status && item.status?.toLowerCase() === 'reserved' && (
+                        <div className="absolute top-2 right-2 bg-orange-500 text-white text-xs font-bold px-2 py-1 rounded shadow-sm">
                             RESERVED
                         </div>
                     )}

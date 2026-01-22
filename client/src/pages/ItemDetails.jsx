@@ -14,7 +14,7 @@ export default function ItemDetails() {
     const [replyTo, setReplyTo] = useState(null); // id of comment being replied to
     const [replyText, setReplyText] = useState('');
     const [submittingComment, setSubmittingComment] = useState(false);
-    const [buying, setBuying] = useState(false);
+    const [confirming, setConfirming] = useState(false);
     const [reserving, setReserving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [editForm, setEditForm] = useState({
@@ -106,26 +106,18 @@ export default function ItemDetails() {
         }
     };
 
-    const handleBuy = async () => {
-        if (!user) {
-            alert('Please login to purchase items');
-            navigate('/login', { state: { from: `/items/${id}` } });
-            return;
-        }
-
-        if (window.confirm('Are you sure you want to buy this item?')) {
-            setBuying(true);
-            try {
-                const { data } = await api.post(`/items/${id}/buy`);
-                alert(data.message || 'Purchase successful!');
-                // Update local item state to reflect sold status
-                setItem(prev => ({ ...prev, status: 'sold' }));
-            } catch (err) {
-                console.error('Buy error:', err);
-                alert(err.response?.data?.error || 'Failed to purchase item');
-            } finally {
-                setBuying(false);
-            }
+    const handleConfirmBooking = async () => {
+        if (!window.confirm('Confirm this deal? This will mark the item as sold.')) return;
+        setConfirming(true);
+        try {
+            await api.post(`/bookings/${item.booking_id}/confirm`);
+            alert('Deal confirmed successfully!');
+            setItem(prev => ({ ...prev, status: 'sold' }));
+        } catch (err) {
+            console.error('Confirm error:', err);
+            alert(err.response?.data?.error || 'Failed to confirm deal');
+        } finally {
+            setConfirming(false);
         }
     };
 
@@ -163,6 +155,18 @@ export default function ItemDetails() {
         } catch (err) {
             console.error('Cancel error:', err);
             alert(err.response?.data?.error || 'Failed to cancel booking');
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm('Are you sure you want to delete this item? This action cannot be undone.')) return;
+        try {
+            await api.delete(`/items/${id}`);
+            alert('Item deleted successfully');
+            navigate('/marketplace');
+        } catch (err) {
+            console.error('Delete error:', err);
+            alert(err.response?.data?.error || 'Failed to delete item');
         }
     };
 
@@ -261,14 +265,39 @@ export default function ItemDetails() {
 
 
                             {item.status?.toLowerCase() === 'sold' ? (
-                                <div className="w-full py-3 bg-gray-300 text-gray-700 rounded-lg font-medium text-center">
-                                    Sold Out
+                                <div className="space-y-4">
+                                    <div className="w-full py-3 bg-gray-300 text-gray-700 rounded-lg font-medium text-center">
+                                        Sold Out
+                                    </div>
+                                    {/* Show Buyer to Seller */}
+                                    {user && user.id === item.uploaded_by && item.buyer_name && (
+                                        <div className="text-sm text-center text-gray-600 bg-gray-100 p-2 rounded">
+                                            Sold to: <strong>{item.buyer_name}</strong>
+                                        </div>
+                                    )}
                                 </div>
                             ) : item.status?.toLowerCase() === 'reserved' ? (
                                 <div className="space-y-4">
                                     <div className="w-full py-3 bg-yellow-100 text-yellow-700 rounded-lg font-medium text-center">
                                         Reserved
                                     </div>
+
+                                    {/* Show Buyer to Seller */}
+                                    {user && user.id === item.uploaded_by && item.buyer_name && (
+                                        <div className="text-sm text-center text-gray-600 bg-yellow-50 p-2 rounded">
+                                            Reserved by: <strong>{item.buyer_name}</strong>
+                                        </div>
+                                    )}
+
+                                    {user && user.id === item.uploaded_by && (
+                                        <button
+                                            onClick={handleConfirmBooking}
+                                            disabled={confirming}
+                                            className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition active:scale-95 disabled:opacity-50"
+                                        >
+                                            {confirming ? 'Confirming...' : 'Confirm Deal'}
+                                        </button>
+                                    )}
                                     {(user && (user.id === item.uploaded_by || user.id === item.buyer_id)) && (
                                         <button
                                             onClick={handleCancel}
@@ -289,19 +318,18 @@ export default function ItemDetails() {
                                     >
                                         Edit Listing
                                     </button>
+                                    <button
+                                        onClick={handleDelete}
+                                        className="w-full py-2 bg-white border border-red-500 text-red-600 hover:bg-red-50 rounded-lg font-medium transition active:scale-95"
+                                    >
+                                        Delete Item
+                                    </button>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
                                     <button
-                                        onClick={handleBuy}
-                                        disabled={buying || reserving}
-                                        className="flex items-center justify-center w-full py-3 bg-green-600 hover:bg-green-700 active:scale-95 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        {buying ? 'Processing...' : 'Buy Now'}
-                                    </button>
-                                    <button
                                         onClick={handleReserve}
-                                        disabled={buying || reserving}
+                                        disabled={reserving}
                                         className="flex items-center justify-center w-full py-3 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white rounded-lg font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {reserving ? 'Processing...' : 'Reserve Booking'}
