@@ -8,6 +8,8 @@ export default function Register() {
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const [otp, setOtp] = useState('');
     const [step, setStep] = useState('form'); // 'form' or 'verify'
     const { login, verifyRegister } = useAuth();
