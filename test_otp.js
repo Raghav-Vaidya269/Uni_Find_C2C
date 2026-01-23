@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const BASE_URL = 'http://localhost:5000/api'; // Adjust port if needed
+const BASE_URL = 'http://localhost:3000/api'; // Adjust port if needed
 
 async function test() {
     const email = `testuser_${Date.now()}@ku.edu.np`;
