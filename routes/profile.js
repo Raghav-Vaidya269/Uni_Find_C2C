@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, JWT_SECRET } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const jwt = require('jsonwebtoken');
 
 // Update Profile
 router.put('/profile', authenticateToken, upload.single('avatar'), async (req, res) => {
@@ -30,7 +31,14 @@ router.put('/profile', authenticateToken, upload.single('avatar'), async (req, r
         const [rows] = await db.execute('SELECT id, name, email, picture FROM users WHERE id = ?', [userId]);
         const updatedUser = { ...rows[0], picture: picture || rows[0].picture };
 
-        res.json({ message: 'Profile updated', user: updatedUser });
+        // Generate new token with updated info
+        const token = jwt.sign(
+            { id: updatedUser.id, email: updatedUser.email, name: updatedUser.name, picture: updatedUser.picture },
+            JWT_SECRET,
+            { expiresIn: '24h' }
+        );
+
+        res.json({ message: 'Profile updated', user: updatedUser, token });
     } catch (err) {
         console.error(err);
         res.status(500).send('Error updating profile');
