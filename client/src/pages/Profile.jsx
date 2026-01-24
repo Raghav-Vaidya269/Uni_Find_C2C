@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 export default function Profile() {
     const [activeTab, setActiveTab] = useState('active');
 
-    const { logout, refreshUser, user } = useAuth();
+    const { logout, refreshUser, refreshAuth, user } = useAuth();
 
     // Auth context user is basic payload, we want full profile + stats
     // We'll manage local profile state to update immediately on edit.
@@ -88,8 +88,8 @@ export default function Profile() {
             }));
 
             // Update global context
-            if (refreshUser) {
-                refreshUser(res.data.user);
+            if (refreshAuth) {
+                refreshAuth(res.data.token);
             }
 
             setIsEditing(false);
