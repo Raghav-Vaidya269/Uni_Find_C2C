@@ -16,7 +16,23 @@ api.interceptors.request.use(
         }
         return config;
     },
-    (error) => console.error(error)
+    (error) => Promise.reject(error)
+);
+
+// Interceptor to handle authentication errors (expired tokens)
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            console.error("Session expired or unauthorized. Logging out...");
+            localStorage.removeItem('token');
+            // Hard redirect to login to clear state and stop infinite loops
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
 );
 
 export default api;

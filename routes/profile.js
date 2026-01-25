@@ -15,22 +15,28 @@ router.put('/profile', authenticateToken, upload.single('avatar'), async (req, r
             picture = `/uploads/${req.file.filename}`;
         }
 
-        try {
-            await db.execute('UPDATE users SET name = ?' + (picture ? ', picture = ?' : '') + ' WHERE id = ?',
-                picture ? [name, picture, userId] : [name, userId]
-            );
-        } catch (sqlErr) {
-            if (sqlErr.code === 'ER_BAD_FIELD_ERROR' || sqlErr.code === 'ER_UNKNOWN_COLUMN') {
-                await db.execute('UPDATE users SET name = ? WHERE id = ?', [name, userId]);
-            } else {
-                throw sqlErr;
-            }
+        // Basic validation
+        if (!name || name.trim() === '') {
+            return res.status(400).json({ error: 'Name is required' });
         }
 
-        const [rows] = await db.execute('SELECT id, name, email, picture FROM users WHERE id = ?', [userId]);
-        const updatedUser = { ...rows[0], picture: picture || rows[0].picture };
+        // Update name and picture if provided
+        let query = 'UPDATE users SET name = ?';
+        let params = [name];
 
-        res.json({ message: 'Profile updated', user: updatedUser });
+        if (picture) {
+            query += ', picture = ?';
+            params.push(picture);
+        }
+
+        query += ' WHERE id = ?';
+        params.push(userId);
+
+        await db.execute(query, params);
+
+        const [rows] = await db.execute('SELECT id, name, email, picture FROM users WHERE id = ?', [userId]);
+
+        res.json({ message: 'Profile updated', user: rows[0] });
     } catch (err) {
         console.error(err);
         res.status(500).send('Error updating profile');
@@ -43,7 +49,11 @@ router.get('/my-items', authenticateToken, async (req, res) => {
         const userId = req.user.id;
         console.time(`my-items-${userId}`);
         const [items] = await db.execute(
-            'SELECT * FROM items WHERE uploaded_by = ? ORDER BY created_at DESC',
+            `SELECT items.*, users.name as seller_name, users.picture as seller_picture 
+             FROM items 
+             JOIN users ON items.uploaded_by = users.id 
+             WHERE items.uploaded_by = ? 
+             ORDER BY items.created_at DESC`,
             [userId]
         );
         console.timeEnd(`my-items-${userId}`);

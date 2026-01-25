@@ -143,7 +143,7 @@ export default function Profile() {
                         />
                         <button
                             onClick={() => setIsEditing(true)}
-                            className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition"
+                            className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full hover:bg-blue-700 transition shadow-lg border-2 border-white"
                         >
                             <Edit className="h-4 w-4" />
                         </button>
