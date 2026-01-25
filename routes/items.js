@@ -24,11 +24,12 @@ router.post('/', authenticateToken, upload.array('images', 5), async (req, res) 
 });
 
 // Update Item
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, upload.array('images', 1), async (req, res) => {
     try {
         const itemId = req.params.id;
         const userId = req.user.id;
         const { title, description, price, category } = req.body;
+        const imageUrl = req.files && req.files.length > 0 ? `/uploads/${req.files[0].filename}` : null;
 
         const [items] = await db.execute('SELECT * FROM items WHERE id = ?', [itemId]);
         if (items.length === 0) return res.status(404).json({ error: 'Item not found' });
@@ -37,12 +38,20 @@ router.put('/:id', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: 'You are not authorized to edit this item.' });
         }
 
-        await db.execute(
-            'UPDATE items SET title = ?, description = ?, price = ?, category = ? WHERE id = ?',
-            [title, description, price, category.toLowerCase(), itemId]
-        );
+        let query = 'UPDATE items SET title = ?, description = ?, price = ?, category = ?';
+        let params = [title, description, price, category.toLowerCase()];
 
-        res.json({ message: 'Item updated successfully' });
+        if (imageUrl) {
+            query += ', image_url = ?';
+            params.push(imageUrl);
+        }
+
+        query += ' WHERE id = ?';
+        params.push(itemId);
+
+        await db.execute(query, params);
+
+        res.json({ message: 'Item updated successfully', image_url: imageUrl || items[0].image_url });
     } catch (err) {
         console.error('Update item error:', err);
         res.status(500).json({ error: 'Failed to update item' });

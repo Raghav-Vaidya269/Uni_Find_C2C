@@ -24,6 +24,8 @@ export default function ItemDetails() {
         price: '',
         category: ''
     });
+    const [newImageFile, setNewImageFile] = useState(null);
+    const [newImagePreview, setNewImagePreview] = useState(null);
     const { user } = useAuth();
     const { showToast } = useToast();
     const navigate = useNavigate();
@@ -175,18 +177,43 @@ export default function ItemDetails() {
             price: item.price,
             category: item.category
         });
+        setNewImageFile(null);
+        setNewImagePreview(null);
         setIsEditing(true);
+    };
+
+    const handleNewImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setNewImageFile(file);
+            setNewImagePreview(URL.createObjectURL(file));
+        }
     };
 
     const handleUpdateItem = async (e) => {
         e.preventDefault();
         try {
-            await api.put(`/items/${id}`, editForm);
+            const formData = new FormData();
+            formData.append('title', editForm.title);
+            formData.append('description', editForm.description);
+            formData.append('price', editForm.price);
+            formData.append('category', editForm.category);
+
+            if (newImageFile) {
+                formData.append('images', newImageFile);
+            }
+
+            const res = await api.put(`/items/${id}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
             showToast('Item updated successfully!', 'success');
             // Refresh item data
             const itemRes = await api.get(`/items/${id}`);
             setItem(itemRes.data);
             setIsEditing(false);
+            setNewImageFile(null);
+            setNewImagePreview(null);
         } catch (err) {
             console.error('Update item error:', err);
             showToast(err.response?.data?.error || 'Failed to update item', 'error');
@@ -514,10 +541,35 @@ export default function ItemDetails() {
                                     </select>
                                 </div>
                             </div>
+
+                            {/* Image Replacement */}
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Replace Image (Optional)</label>
+                                <div className="flex items-center gap-4">
+                                    <div className="relative h-20 w-20 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center">
+                                        {newImagePreview ? (
+                                            <img src={newImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <img src={item.image_url} alt="Current" className="w-full h-full object-cover opacity-50" />
+                                        )}
+                                    </div>
+                                    <label className="flex-1">
+                                        <div className="flex flex-col items-center justify-center py-2 px-4 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition">
+                                            <span className="text-xs text-gray-500 font-medium">Click to select new image</span>
+                                            <input type="file" accept="image/*" className="hidden" onChange={handleNewImageChange} />
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
                             <div className="flex gap-4 pt-4">
                                 <button
                                     type="button"
-                                    onClick={() => setIsEditing(false)}
+                                    onClick={() => {
+                                        setIsEditing(false);
+                                        setNewImageFile(null);
+                                        setNewImagePreview(null);
+                                    }}
                                     className="flex-1 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition"
                                 >
                                     Cancel
