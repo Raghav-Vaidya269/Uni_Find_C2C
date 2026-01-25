@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Upload, X } from 'lucide-react';
 import api from '../api';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '../context/ToastContext';
 
 const CATEGORIES = ['Books', 'Electronics', 'Stationery', 'Clothing', 'Furniture', 'Sports', 'Other'];
 
@@ -16,6 +17,7 @@ export default function AddItem() {
     });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { showToast } = useToast();
 
     const handleImageUpload = (e) => {
         const selectedFiles = Array.from(e.target.files);
@@ -63,7 +65,7 @@ export default function AddItem() {
             navigate('/marketplace');
         } catch (err) {
             console.error("Failed to post item", err);
-            alert('Failed to list item. Please try again.');
+            showToast('Failed to list item. Please try again.', 'error');
         } finally {
             setLoading(false);
         }

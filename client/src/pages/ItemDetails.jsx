@@ -3,6 +3,7 @@ import { MapPin, ArrowLeft, MessageSquare, Send, CornerDownRight } from 'lucide-
 import { useState, useEffect } from 'react';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 export default function ItemDetails() {
     const { id } = useParams();
@@ -24,6 +25,7 @@ export default function ItemDetails() {
         category: ''
     });
     const { user } = useAuth();
+    const { showToast } = useToast();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -60,7 +62,7 @@ export default function ItemDetails() {
     const handlePostComment = async (e) => {
         e.preventDefault();
         if (!user) {
-            alert('Please login to comment');
+            showToast('Please login to comment', 'warning');
             return;
         }
         if (!newComment.trim()) return;
@@ -75,7 +77,7 @@ export default function ItemDetails() {
             setNewComment('');
         } catch (err) {
             console.error('Error posting comment:', err);
-            alert('Failed to post comment');
+            showToast('Failed to post comment', 'error');
         } finally {
             setSubmittingComment(false);
         }
@@ -83,7 +85,7 @@ export default function ItemDetails() {
 
     const handlePostReply = async (parentId) => {
         if (!user) {
-            alert('Please login to reply');
+            showToast('Please login to reply', 'warning');
             return;
         }
         if (!replyText.trim()) return;
@@ -100,7 +102,7 @@ export default function ItemDetails() {
             setReplyTo(null);
         } catch (err) {
             console.error('Error posting reply:', err);
-            alert('Failed to post reply');
+            showToast('Failed to post reply', 'error');
         } finally {
             setSubmittingComment(false);
         }
@@ -118,11 +120,11 @@ export default function ItemDetails() {
                 // Direct mark as sold
                 await api.post(`/items/${id}/sold`);
             }
-            alert('Item marked as sold successfully!');
+            showToast('Item marked as sold successfully!', 'success');
             setItem(prev => ({ ...prev, status: 'sold' }));
         } catch (err) {
             console.error('Confirm error:', err);
-            alert(err.response?.data?.error || 'Failed to mark item as sold');
+            showToast(err.response?.data?.error || 'Failed to mark item as sold', 'error');
         } finally {
             setConfirming(false);
         }
@@ -130,7 +132,7 @@ export default function ItemDetails() {
 
     const handleReserve = async () => {
         if (!user) {
-            alert('Please login to reserve items');
+            showToast('Please login to reserve items', 'warning');
             navigate('/login', { state: { from: `/items/${id}` } });
             return;
         }
@@ -139,13 +141,13 @@ export default function ItemDetails() {
             setReserving(true);
             try {
                 const { data } = await api.post(`/items/${id}/reserve`);
-                alert(data.message || 'Reservation successful!');
+                showToast(data.message || 'Reservation successful!', 'success');
                 // Re-fetch to get booking_id and other details
                 const itemRes = await api.get(`/items/${id}`);
                 setItem(itemRes.data);
             } catch (err) {
                 console.error('Reserve error:', err);
-                alert(err.response?.data?.error || 'Failed to reserve item');
+                showToast(err.response?.data?.error || 'Failed to reserve item', 'error');
             } finally {
                 setReserving(false);
             }
@@ -157,11 +159,11 @@ export default function ItemDetails() {
 
         try {
             await api.post(`/bookings/${item.booking_id}/cancel`);
-            alert('Booking cancelled successfully');
+            showToast('Booking cancelled successfully', 'success');
             setItem(prev => ({ ...prev, status: 'available', booking_id: null, buyer_id: null }));
         } catch (err) {
             console.error('Cancel error:', err);
-            alert(err.response?.data?.error || 'Failed to cancel booking');
+            showToast(err.response?.data?.error || 'Failed to cancel booking', 'error');
         }
     };
 
@@ -180,14 +182,14 @@ export default function ItemDetails() {
         e.preventDefault();
         try {
             await api.put(`/items/${id}`, editForm);
-            alert('Item updated successfully!');
+            showToast('Item updated successfully!', 'success');
             // Refresh item data
             const itemRes = await api.get(`/items/${id}`);
             setItem(itemRes.data);
             setIsEditing(false);
         } catch (err) {
             console.error('Update item error:', err);
-            alert(err.response?.data?.error || 'Failed to update item');
+            showToast(err.response?.data?.error || 'Failed to update item', 'error');
         }
     };
 

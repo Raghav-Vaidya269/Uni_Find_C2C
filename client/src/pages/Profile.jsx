@@ -4,11 +4,13 @@ import api from '../api';
 import { User, MapPin, Mail, Edit, Package, CheckCircle, Heart, LogOut, X } from 'lucide-react';
 import ItemCard from '../components/ItemCard';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 export default function Profile() {
     const [activeTab, setActiveTab] = useState('active');
 
     const { logout, refreshUser, user } = useAuth();
+    const { showToast } = useToast();
 
     // Auth context user is basic payload, we want full profile + stats
     // We'll manage local profile state to update immediately on edit.
@@ -93,10 +95,10 @@ export default function Profile() {
             }
 
             setIsEditing(false);
-            alert('Profile updated successfully!');
+            showToast('Profile updated successfully!', 'success');
         } catch (error) {
             console.error('Failed to update profile:', error);
-            alert('Failed to update profile');
+            showToast('Failed to update profile', 'error');
         }
     };
 
