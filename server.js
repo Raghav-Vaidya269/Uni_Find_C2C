@@ -10,6 +10,7 @@ const itemRoutes = require('./routes/items');
 const profileRoutes = require('./routes/profile');
 const commentRoutes = require('./routes/comments');
 const bookingRoutes = require('./routes/bookings');
+const notificationRoutes = require('./routes/notifications');
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use('/api/items', itemRoutes);
 app.use('/api', profileRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/bookings', bookingRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT || 3000;
 
