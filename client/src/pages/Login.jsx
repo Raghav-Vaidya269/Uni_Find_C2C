@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { LogIn, AlertCircle, Mail, User as UserIcon, Lock } from 'lucide-react';
 import { useToast } from '../context/ToastContext';
 
@@ -12,7 +12,7 @@ export default function Login() {
     const { login } = useAuth();
     const { showToast } = useToast();
     const navigate = useNavigate();
-    const location = useLocation();
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -23,9 +23,8 @@ export default function Login() {
 
         if (res.success) {
             showToast('Sign in successful!', 'success');
-            // Redirect to the page they were trying to access, or profile
-            const from = location.state?.from || '/profile';
-            navigate(from);
+            // Redirect to home page always
+            navigate('/');
         } else {
             if (res.unverified) {
                 setError(<>
