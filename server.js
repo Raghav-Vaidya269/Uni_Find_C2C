@@ -23,7 +23,10 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use('/uploads', express.static('public/uploads'));
 
-
+// Health Check
+app.get('/', (req, res) => {
+  res.send('Uni-Find API is running!');
+});
 
 // Mount Routes
 app.use('/api/auth', authRoutes);
@@ -34,7 +37,7 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // Serve frontend in production
-app.get('/:path*', (req, res) => {
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
