@@ -55,7 +55,29 @@ router.put('/:id', authenticateToken, upload.array('images', 1), async (req, res
         res.json({ message: 'Item updated successfully', image_url: imageUrl || items[0].image_url });
     } catch (err) {
         console.error('Update item error:', err);
-        res.status(500).json({ error: 'Failed to update item' });
+    }
+});
+
+// Delete Item (Soft Delete)
+router.delete('/:id', authenticateToken, async (req, res) => {
+    try {
+        const itemId = req.params.id;
+        const userId = req.user.id;
+
+        const [items] = await db.execute('SELECT * FROM items WHERE id = ?', [itemId]);
+        if (items.length === 0) return res.status(404).json({ error: 'Item not found' });
+
+        if (items[0].uploaded_by !== userId) {
+            return res.status(403).json({ error: 'You are not authorized to delete this item.' });
+        }
+
+        // Soft delete: Update status to 'deleted'
+        await db.execute('UPDATE items SET status = "deleted" WHERE id = ?', [itemId]);
+
+        res.json({ message: 'Item deleted successfully' });
+    } catch (err) {
+        console.error('Delete item error:', err);
+        res.status(500).json({ error: 'Failed to delete item' });
     }
 });
 

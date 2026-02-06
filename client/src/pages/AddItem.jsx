@@ -115,7 +115,18 @@ export default function AddItem() {
                             className="block w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-blue-500 focus:border-blue-500"
                             placeholder="0.00"
                             value={formData.price}
-                            onChange={handleChange}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === '' || (/^\d*\.?\d*$/.test(val) && parseFloat(val) >= 0)) {
+                                    handleChange(e);
+                                }
+                            }}
+                            onKeyDown={(e) => {
+                                // Prevent non-numeric keys: allow backspace, delete, tab, escape, enter, decimal point
+                                if (['-', '+', 'e', 'E'].includes(e.key)) {
+                                    e.preventDefault();
+                                }
+                            }}
                         />
                     </div>
                 </div>

@@ -24,7 +24,7 @@ export default function Login() {
         if (res.success) {
             showToast('Sign in successful!', 'success');
             // Redirect to home page always
-            navigate('/');
+            navigate('/marketplace');
         } else {
             if (res.unverified) {
                 setError(<>
