@@ -100,6 +100,10 @@ router.get('/', async (req, res) => {
             query += ' AND price <= ?';
             params.push(maxPrice);
         }
+        if (req.query.minPrice) {
+            query += ' AND price >= ?';
+            params.push(req.query.minPrice);
+        }
 
         query += ' ORDER BY created_at DESC';
 

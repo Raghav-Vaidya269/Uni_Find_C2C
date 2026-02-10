@@ -19,7 +19,7 @@ async function sendOTP(email, otp, type) {
         });
 
         const mailOptions = {
-            from: process.env.EMAIL_USER,
+            from: `"UniFind" <${process.env.EMAIL_USER}>`,
             to: email,
             subject: `UniFind - ${type} OTP`,
             text: `Your ${type.toLowerCase()} verification code is: ${otp}\n\nThis code expires in 15 minutes.`
