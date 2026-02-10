@@ -21,11 +21,12 @@ export default function AddItem() {
 
     const handleImageUpload = (e) => {
         const selectedFiles = Array.from(e.target.files);
-        setFiles([...files, ...selectedFiles]);
-
-        // Create preview URLs
-        const newImages = selectedFiles.map(file => URL.createObjectURL(file));
-        setImages([...images, ...newImages]);
+        // Single file upload - replace existing
+        const file = selectedFiles[0];
+        if (file) {
+            setFiles([file]);
+            setImages([URL.createObjectURL(file)]);
+        }
     };
 
     const removeImage = (index) => {
@@ -164,10 +165,10 @@ export default function AddItem() {
                         <label className="border-2 border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all duration-200 h-32">
                             <Upload className="h-8 w-8 text-gray-400 mb-2" />
                             <span className="text-sm text-gray-500">Add Photo</span>
-                            <input type="file" multiple accept="image/*" className="hidden" onChange={handleImageUpload} />
+                            <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
                         </label>
                     </div>
-                    <p className="text-xs text-gray-500">First picture is the title picture. You can upload up to 5 photos.</p>
+
                 </div>
 
                 <div className="pt-4 flex justify-end gap-4">

@@ -70,7 +70,7 @@ export default function Navbar() {
                     {/* Logo */}
                     <Link to="/" className="flex items-center space-x-2 group">
                         <img src="/logo.png" alt="UNI-find Logo" className="h-10 w-10 object-contain group-hover:scale-110 transition-transform duration-200" />
-                        <span className="text-2xl font-bold text-blue-600">UNI-find</span>
+                        <span className="text-2xl font-bold text-blue-600 hidden sm:block">UNI-find</span>
                     </Link>
 
                     {/* Center Search (Optional - can be conditional or always present) */}
