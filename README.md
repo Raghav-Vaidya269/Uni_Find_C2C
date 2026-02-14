@@ -29,10 +29,10 @@
 - MySQL server running.
 
 ### 2. Database Setup
-1. Create a database.
+1. Create a database named `unifind_db`.
 2. Import the schema from `database.sql`:
    ```bash
-   mysql -u root -p database_name < database.sql
+   mysql -u root -p unifind_db < database.sql
    ```
 
 ### 3. Integrated Setup (Recommended)
@@ -42,14 +42,13 @@ You can run both the backend and frontend simultaneously from the root directory
    ```bash
    npm install
    ```
-2. **Configure Environment**: Create a `.env` file in the root directory.
+2. **Configure Environment**: Create a `.env` file in the root directory based on `.env.sample`.
    ```env
    DB_HOST=localhost
    DB_USER=root
    DB_PASSWORD=your_password
-   DB_NAME=unifindc2c
+   DB_NAME=unifind_db
    JWT_SECRET=your_secret_key
-   PORT=3000
    EMAIL_USER=your_gmail@gmail.com
    EMAIL_PASS=your_gmail_app_password
    ```
@@ -57,7 +56,7 @@ You can run both the backend and frontend simultaneously from the root directory
    ```bash
    npm run dev
    ```
-   *This command uses `concurrently` to start the backend server (on port 3000) and the frontend Vite server.*
+   *This command uses `concurrently` to start the backend server (on port 5000) and the frontend Vite server.*
 
 ### 4. Alternative Manual Setup
 - **Backend**: `npm run server` (runs nodemon)
