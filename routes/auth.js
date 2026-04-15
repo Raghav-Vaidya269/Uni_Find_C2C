@@ -1,16 +1,24 @@
 const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const router = express.Router();//Router() creates a new router object that can be used to define routes.
+//It returns an object that can store and handle routes (like .get, .post)
+const bcrypt = require('bcryptjs'); //object that provides functions for hashing and comparing passwords securely. It uses the bcrypt algorithm, which is designed to be slow and resistant to brute-force attacks, making it a good choice for password hashing.
+const jwt = require('jsonwebtoken'); //object that provides functions for creating and verifying JSON Web Tokens (JWTs). JWTs are a compact, URL-safe means of representing claims to be transferred between two parties. They are commonly used for authentication and authorization in web applications.
 const { v7: uuidv7 } = require('uuid');
-const db = require('../db');
-const { JWT_SECRET } = require('../middleware/auth');
-const nodemailer = require('nodemailer');
+const db = require('../db'); // ./ means look for db in the SAME folder as this file
+// ../ means look for db in the PARENT folder of this file (which is the root folder of the project)
+const { JWT_SECRET } = require('../middleware/auth'); //onject destructuring means we are importing the JWT_SECRET variable from the auth.js file in the middleware folder. 
+// This variable is likely used as the secret key for signing JWT tokens in our authentication process.
+const nodemailer = require('nodemailer'); // object that provides functions for sending emails from Node.js applications. It allows you to create and send email messages using various transport methods (like SMTP, Sendmail, etc.) and supports features like attachments, HTML content, and more. In this code, it's used to send OTPs (One-Time Passwords) for registration and password reset processes.
+
+//A config object is a JavaScript object that contains key-value pairs used to configure the behavior of a function, module, or application.
+//  In the context of nodemailer, a config object is typically used to specify the email service provider, authentication details (like username and password), and other settings required to establish a connection for sending emails. For example, when creating a transporter in nodemailer, you would pass a config object that includes the service (e.g., 'gmail') and the auth object with user and pass properties for authentication.
 
 // Helper to send OTP
-async function sendOTP(email, otp, type) {
+async function sendOTP(email, otp, type) { 
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-        const transporter = nodemailer.createTransport({
+        const transporter = nodemailer.createTransport({ // createTransport is a function provided by nodemailer that creates a transporter object using the specified configuration.
+        //  The transporter object is responsible for handling the actual sending of emails based on the provided configuration.
+        // {service: 'gmail', auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }} is the configuration object that specifies the email service provider (in this case, Gmail) and the authentication details (username and password) required to connect to the email service and send emails.
             service: 'gmail',
             auth: {
                 user: process.env.EMAIL_USER,
@@ -38,7 +46,9 @@ async function sendOTP(email, otp, type) {
 // 1. Auth - Simple REST API (KUmail only)
 router.post('/kumail', async (req, res) => {
     try {
-        const { email, name, type, password } = req.body; // type: 'login' or 'register'
+        const { email, name, type, password } = req.body; // object destructuring is a convenient way to extract multiple properties from an object and assign them to variables in a single statement.
+        //  In this case, we are extracting the email, name, type, and password properties from the req.body object, which contains the data sent in the request body when a client makes an HTTP request to this endpoint. 
+        // This allows us to easily access these values as individual variables for further processing in our authentication logic.
 
         // Validate KUmail domain - accept both @ku.edu.np and @student.ku.edu.np
         const isValidKUmail = email.endsWith('@ku.edu.np') || email.endsWith('@student.ku.edu.np');

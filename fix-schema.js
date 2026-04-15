@@ -13,7 +13,7 @@ const query = "ALTER TABLE items MODIFY COLUMN status ENUM('available', 'pending
 
 console.log('Running query:', query);
 
-connection.query(query, (err, results) => {
+connection.query(query, (err, results) => { //connection.query(SQL, callback)
     if (err) {
         console.error('FAILED to alter table:', err);
         process.exit(1);

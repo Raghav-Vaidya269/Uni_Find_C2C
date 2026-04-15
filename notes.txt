@@ -1,0 +1,26 @@
+in JavaScript, functions are objects
+
+Proof: functions behave like objects
+function f() {}
+
+f.name = "hello";
+
+console.log(f.name); // "hello"
+
+You just added a property to a function.
+
+Only objects can do that.
+
+4) Even crazier
+
+function f() {}
+
+console.log(f.__proto__);
+
+//Functions inherit from:
+
+Function → Object
+
+So:
+
+function IS-A object
